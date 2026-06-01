@@ -1,697 +1,418 @@
-@import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;700;800;900&family=Outfit:wght@300;400;500;600;700&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=VT323&display=swap');
 
 :root {
-  /* RPG Medieval Color Scheme */
-  --bg-obsidian: #090605;
-  --bg-stone: #150e0b;
-  --bg-panel: #1d140f;
-  --bg-panel-trans: rgba(29, 20, 15, 0.9);
+  --bg-page: #000000;
+  --bg-panel: #1c1b1a;
+  --bg-slot: rgba(0, 0, 0, 0.5);
   
-  --color-gold: #c5a059;
-  --color-gold-bright: #ffd700;
-  --color-gold-dim: #8c6e33;
-  --color-gold-glow: rgba(197, 160, 89, 0.4);
-
-  --color-border: #4d3324;
-  --color-border-accent: #c5a059;
-  --color-border-glow: rgba(197, 160, 89, 0.15);
-
-  --color-text: #eadecd;
-  --color-text-dim: #a89984;
-  --color-text-dark: #625446;
-
-  --color-danger: #c22929;
-  --color-success: #3ab046;
+  --color-border: #3a3530;
+  --color-border-bright: #5a4b3d;
+  --color-gold: #d4b47c;
+  --color-text: #e0e0e0;
+  --color-text-dim: #8a8074;
   
-  /* Class RPG Colors */
-  --class-warrior: #dc2626; /* Crimson Red */
-  --class-mage: #38bdf8; /* Frost/Arcane Blue */
-  --class-rogue: #22c55e; /* Poison Green */
-
-  /* Rarity RPG Glows */
-  --rarity-common: #4d3324;
-  --rarity-uncommon: #16a34a;
-  --rarity-rare: #2563eb;
-  --rarity-epic: #9333ea;
-  --rarity-legendary: #ea580c;
-
-  --shadow-rpg: 0 10px 30px rgba(0, 0, 0, 0.85), inset 0 0 20px rgba(0, 0, 0, 0.9);
-  --shadow-inset-box: inset 0 0 10px rgba(0, 0, 0, 0.95);
+  --class-warrior: #ff3333;
+  --class-mage: #33ccff;
+  --class-rogue: #33ff33;
   
-  --transition-rpg: 0.1s ease-out;
+  --rarity-common: #3a3530;
+  --rarity-uncommon: #1e6b26;
+  --rarity-rare: #1d4ed8;
+  --rarity-epic: #701a75;
+  --rarity-legendary: #b45309;
 }
 
+/* ----------------------------------------------------
+   GLOBAL PIXEL RESET
+   ---------------------------------------------------- */
 * {
   box-sizing: border-box;
   margin: 0;
   padding: 0;
   user-select: none;
-}
-
-/* Sharp corners for authentic RPG UI panels, frames, and slots */
-.app-wrapper, .glass-panel, .rpg-panel, .modal-content, 
-.btn-primary, .btn-secondary, .btn-danger, .layout-toggle-btn,
-.item-slot, .hero-card, select, input[type="text"] {
-  border-radius: 0px !important;
+  font-family: 'VT323', monospace !important;
+  font-size: 19px; /* Larger base font for pixel font readability */
+  line-height: 1.2;
+  border-radius: 0px !important; /* Strict sharp corners */
+  text-shadow: 1px 1px 0px #000;
 }
 
 body {
-  background-color: transparent;
+  background-color: var(--bg-page);
   color: var(--color-text);
-  font-family: 'Outfit', sans-serif;
   overflow: hidden;
-  font-size: 14px;
 }
 
-/* Custom Scrollbars: Dark Gothic */
+/* Retro Custom Scrollbars */
 ::-webkit-scrollbar {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
 }
 ::-webkit-scrollbar-track {
-  background: #090605;
-  border-left: 1px solid var(--color-border);
+  background: #0d0c0c;
+  border-left: 2px solid var(--color-border);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-border);
-  border: 1px solid var(--color-gold-dim);
+  background: var(--color-border-bright);
+  border: 1px solid var(--color-gold);
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-gold-dim);
-}
-
-/* Typography Helpers */
-h1, h2, h3, h4, .rpg-font {
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  letter-spacing: 1px;
-  text-shadow: 2px 2px 2px #000;
-  color: var(--color-text);
-}
-
-/* Main RPG Container Styles */
-.app-wrapper {
-  background-color: var(--bg-stone);
-  background-image: 
-    radial-gradient(circle at 50% 50%, rgba(29, 20, 15, 0.3) 0%, rgba(9, 6, 5, 0.7) 100%),
-    repeating-linear-gradient(45deg, rgba(0,0,0,0.03) 0px, rgba(0,0,0,0.03) 2px, transparent 2px, transparent 4px);
-  color: var(--color-text);
-  display: flex;
-  flex-direction: column;
-  border: 3px double var(--color-border-accent);
-  outline: 2px solid var(--color-border);
-  outline-offset: -6px;
-  box-shadow: var(--shadow-rpg);
-  padding: 6px;
-}
-
-/* ----------------------------------------------------
-   WIDGET MODE LAYOUT (Small RPG Panel Window)
-   ---------------------------------------------------- */
-.app-wrapper.mode-widget {
-  width: 375px;
-  height: 620px;
-  position: relative;
-  overflow: hidden;
-}
-
-.mode-widget .app-header {
-  height: 52px;
-  border-bottom: 2px solid var(--color-border);
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  padding: 0 12px;
-  background: linear-gradient(180deg, #1d140f 0%, #150e0b 100%);
-  position: relative;
-}
-
-.mode-widget .app-header::after {
-  content: '';
-  position: absolute;
-  bottom: -2px;
-  left: 0;
-  right: 0;
-  height: 1px;
   background: var(--color-gold);
 }
 
-.mode-widget .app-main {
-  flex: 1;
-  overflow-y: auto;
-  padding: 12px;
-  display: flex;
-  flex-direction: column;
-  gap: 12px;
-  padding-bottom: 56px; /* Space for bottom tabs */
-}
-
-/* Bottom RPG Action Tabs */
-.mode-widget .app-tabs {
-  position: absolute;
-  bottom: 0;
-  left: 0;
-  right: 0;
-  height: 48px;
-  display: flex;
-  background: #150e0b;
-  border-top: 2px solid var(--color-border);
-  box-shadow: 0 -4px 10px rgba(0,0,0,0.5);
-}
-
-.mode-widget .tab-btn {
-  flex: 1;
-  background: transparent;
-  border: none;
-  color: var(--color-text-dim);
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  font-size: 11px;
-  cursor: pointer;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  gap: 2px;
-  transition: var(--transition-rpg);
-  border-right: 1px solid var(--color-border);
-}
-
-.mode-widget .tab-btn:last-child {
-  border-right: none;
-}
-
-.mode-widget .tab-btn:hover {
-  color: var(--color-gold);
-  background-color: rgba(197, 160, 89, 0.05);
-}
-
-.mode-widget .tab-btn.active {
-  color: var(--color-gold-bright);
-  background: linear-gradient(180deg, rgba(197, 160, 89, 0.08) 0%, rgba(29, 20, 15, 0.4) 100%);
-  border-bottom: 3px solid var(--color-gold-bright);
-}
-
 /* ----------------------------------------------------
-   TASKBAR MODE LAYOUT (Slim Horizontal Strip)
+   WINDOW BORDERS (Ready for Sprite sheets)
    ---------------------------------------------------- */
-.app-wrapper.mode-taskbar {
-  width: 100%;
-  height: 72px;
-  display: flex;
-  flex-direction: row;
-  align-items: center;
-  padding: 0 12px;
-  gap: 12px;
-}
-
-.mode-taskbar .taskbar-section {
-  display: flex;
-  align-items: center;
-  height: 100%;
-  border-right: 2px solid var(--color-border);
-  padding-right: 12px;
-}
-
-.mode-taskbar .taskbar-section:last-child {
-  border-right: none;
-  padding-right: 0;
-}
-
-/* ----------------------------------------------------
-   RPG MEDIEVAL CORE SHAPES
-   ---------------------------------------------------- */
-
-/* RPG Stone Panel Box */
-.glass-panel, .rpg-panel {
+.panel-border {
+  border: 8px double var(--color-border-bright);
+  border-image-source: url('/src/assets/border-sprite.png'); /* User can inject here */
+  border-image-slice: 8 fill;
+  border-image-width: 8px;
+  border-image-repeat: repeat;
   background-color: var(--bg-panel);
-  background-image: linear-gradient(180deg, rgba(255,255,255,0.02) 0%, rgba(0,0,0,0) 100%);
-  border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-inset-box), 0 4px 10px rgba(0,0,0,0.5);
-  padding: 12px;
-  position: relative;
 }
 
-/* Red Medieval Ribbons for Title Headers */
-.rpg-title-ribbon {
-  background: linear-gradient(90deg, transparent 0%, #6b1414 15%, #6b1414 85%, transparent 100%);
-  border-top: 1px solid var(--color-gold-dim);
-  border-bottom: 1px solid var(--color-gold-dim);
-  text-align: center;
-  padding: 4px 0;
-  margin-bottom: 10px;
-}
-
-.rpg-title-ribbon h3 {
-  font-size: 13px;
-  text-transform: uppercase;
-  color: var(--color-gold-bright);
-  text-shadow: 1px 1px 3px #000;
-}
-
-/* Currency & Header Stats */
-.currency-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-  color: var(--color-gold-bright);
-  text-shadow: 0 0 6px rgba(255, 215, 0, 0.4);
-}
-
-.stone-badge {
-  display: flex;
-  align-items: center;
-  gap: 4px;
-  font-weight: 700;
-  color: #a5f3fc; /* Ice blue text */
-  text-shadow: 0 0 6px rgba(165, 243, 252, 0.4);
-}
-
-/* Carved RPG Fluid Progress Bars */
-.progress-container {
+/* ----------------------------------------------------
+   DESKTOP CORE 3-PANEL LAYOUT
+   ---------------------------------------------------- */
+.rpg-desktop-layout {
   display: flex;
   flex-direction: column;
-  gap: 2px;
-  width: 100%;
-}
-
-.progress-header {
-  display: flex;
-  justify-content: space-between;
-  font-size: 11px;
-  color: var(--color-text-dim);
-  font-family: 'Cinzel', serif;
-  font-weight: 600;
-}
-
-.progress-track {
-  width: 100%;
-  height: 14px;
-  background-color: #050302;
-  border: 2px solid var(--color-border);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.9);
-  padding: 1px;
-  overflow: hidden;
-  position: relative;
-}
-
-.progress-fill {
-  height: 100%;
-  transition: width 0.2s ease-out;
-  position: relative;
-}
-
-/* XP Liquid: Deep Royal Violet */
-.progress-fill.xp {
-  background: linear-gradient(180deg, #9333ea 0%, #581c87 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 8px rgba(147, 51, 234, 0.6);
-  border-right: 1px solid #c084fc;
-}
-
-/* Kills Liquid: Glowing Blood Red */
-.progress-fill.kills {
-  background: linear-gradient(180deg, #dc2626 0%, #7f1d1d 100%);
-  box-shadow: inset 0 1px 0 rgba(255,255,255,0.2), 0 0 8px rgba(220, 38, 38, 0.6);
-  border-right: 1px solid #f87171;
-}
-
-/* Custom Scroll logs: retro text screen */
-.combat-log-container {
-  display: flex;
-  flex-direction: column;
-  gap: 4px;
-  flex: 1;
-  overflow-y: auto;
-  font-family: monospace;
-  font-size: 11px;
+  height: 100vh;
   padding: 8px;
-  background-color: #070504;
-  border: 2px solid #2f2017;
-  box-shadow: inset 0 0 8px #000;
-}
-
-.combat-log-item {
-  color: var(--color-text-dim);
-  animation: fadeIn 0.1s ease-out;
-  line-height: 1.3;
-  border-bottom: 1px solid rgba(77, 51, 36, 0.15);
-  padding-bottom: 2px;
-}
-
-/* Hero Frame Cards: Wood Portraits */
-.hero-grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(102px, 1fr));
   gap: 8px;
+  background-color: var(--bg-page);
 }
 
-.hero-card {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  padding: 8px;
-  border: 2px solid var(--color-border);
-  background: linear-gradient(180deg, #2b1d16 0%, #150e0b 100%);
-  box-shadow: inset 0 0 8px rgba(0,0,0,0.5), 0 4px 6px rgba(0,0,0,0.4);
-  position: relative;
-  cursor: pointer;
-  transition: var(--transition-rpg);
-}
-
-.hero-card:hover {
-  border-color: var(--color-gold);
-  background: linear-gradient(180deg, #38271e 0%, #1a120e 100%);
-  box-shadow: inset 0 0 10px rgba(0,0,0,0.4), 0 0 10px var(--color-gold-glow);
-}
-
-.hero-card.class-Warrior { border-top: 4px solid var(--class-warrior); }
-.hero-card.class-Mage { border-top: 4px solid var(--class-mage); }
-.hero-card.class-Rogue { border-top: 4px solid var(--class-rogue); }
-
-.hero-avatar {
-  width: 38px;
+.rpg-top-bar {
   height: 38px;
   display: flex;
   align-items: center;
-  justify-content: center;
-  font-size: 18px;
-  background-color: #0b0705;
-  margin-bottom: 6px;
+  justify-content: space-between;
+  padding: 0 12px;
   border: 2px solid var(--color-border);
-  box-shadow: inset 0 0 6px #000;
-}
-
-.hero-name {
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  font-size: 11px;
-  color: var(--color-text);
-  text-align: center;
-  max-width: 100%;
-  overflow: hidden;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-
-.hero-level {
-  font-size: 10px;
-  color: var(--color-gold-bright);
-  font-weight: bold;
-}
-
-/* ----------------------------------------------------
-   BEVELED RPG BUTTONS (Pressed Medieval style)
-   ---------------------------------------------------- */
-.btn-primary, .btn-rpg-main {
-  background: linear-gradient(to bottom, #852f1b 0%, #4c1307 100%);
-  border: 2px solid var(--color-gold-dim);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.15), 
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4), 
-    0 4px 6px rgba(0, 0, 0, 0.5);
-  color: var(--color-gold-bright);
-  padding: 6px 12px;
-  font-family: 'Cinzel', serif;
-  font-weight: 700;
-  font-size: 12px;
-  text-shadow: 1px 1px 2px #000;
-  cursor: pointer;
-  transition: var(--transition-rpg);
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.btn-primary:hover:not(:disabled) {
-  border-color: var(--color-gold-bright);
-  background: linear-gradient(to bottom, #9b3922 0%, #5d190b 100%);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.25), 
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4), 
-    0 0 10px rgba(255, 215, 0, 0.35);
-}
-
-.btn-primary:active:not(:disabled) {
-  transform: translateY(1px);
-  background: linear-gradient(to bottom, #4c1307 0%, #300c04 100%);
-  box-shadow: 
-    inset 0 3px 5px rgba(0, 0, 0, 0.95), 
-    0 1px 2px rgba(0, 0, 0, 0.2);
-}
-
-.btn-primary:disabled {
-  background: #272220;
-  border-color: #4a4340;
-  color: #625c5a;
-  cursor: not-allowed;
-  box-shadow: none;
-  text-shadow: none;
-}
-
-/* Secondary Button: Steel Plated Look */
-.btn-secondary {
-  background: linear-gradient(to bottom, #3f3e3e 0%, #212121 100%);
-  border: 2px solid var(--color-border);
-  box-shadow: 
-    inset 0 1px 0 rgba(255, 255, 255, 0.1), 
-    inset 0 -2px 0 rgba(0, 0, 0, 0.4), 
-    0 2px 4px rgba(0, 0, 0, 0.4);
-  color: var(--color-text);
-  padding: 5px 10px;
-  font-size: 11px;
-  cursor: pointer;
-  transition: var(--transition-rpg);
-  font-family: 'Cinzel', serif;
-}
-
-.btn-secondary:hover:not(:disabled) {
-  border-color: var(--color-gold-dim);
-  background: linear-gradient(to bottom, #4f4e4e 0%, #2b2b2b 100%);
-}
-
-.btn-secondary:active:not(:disabled) {
-  transform: translateY(1px);
-  background: linear-gradient(to bottom, #212121 0%, #151515 100%);
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.8);
-}
-
-.btn-secondary.active {
-  border-color: var(--color-gold-bright);
-  color: var(--color-gold-bright);
-  background: linear-gradient(to bottom, #45382d 0%, #211913 100%);
-}
-
-/* Danger Button: Burning Skull Red */
-.btn-danger {
-  background: linear-gradient(to bottom, #991b1b 0%, #450a0a 100%);
-  border: 1px solid var(--color-danger);
-  color: #fca5a5;
-  padding: 3px 6px;
-  font-size: 10px;
-  cursor: pointer;
-  transition: var(--transition-rpg);
-  font-family: 'Cinzel', serif;
-}
-
-.btn-danger:hover {
-  background: linear-gradient(to bottom, #b91c1c 0%, #7f1d1d 100%);
-  border-color: #ef4444;
-}
-
-.btn-danger:active {
-  transform: translateY(1px);
-  background: #450a0a;
-}
-
-/* ----------------------------------------------------
-   INVENTORY SHARP GRIDS (Classic RPG grid look)
-   ---------------------------------------------------- */
-.item-grid {
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 6px;
-}
-
-.item-slot {
-  aspect-ratio: 1;
-  background-color: #0b0705;
-  border: 2px solid var(--color-border);
-  box-shadow: var(--shadow-inset-box);
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  cursor: pointer;
-  transition: var(--transition-rpg);
-}
-
-.item-slot:hover {
-  background-color: #17110e;
-  border-color: var(--color-gold-accent);
-}
-
-/* Rarity specific borders and subtle radial ambient color glow inside slot */
-.item-slot.rarity-common { 
-  border-color: var(--color-border); 
-}
-.item-slot.rarity-uncommon { 
-  border-color: var(--rarity-uncommon); 
-  background-image: radial-gradient(circle, rgba(22, 163, 74, 0.15) 0%, transparent 80%);
-}
-.item-slot.rarity-rare { 
-  border-color: var(--rarity-rare); 
-  background-image: radial-gradient(circle, rgba(37, 99, 235, 0.15) 0%, transparent 80%);
-}
-.item-slot.rarity-epic { 
-  border-color: var(--rarity-epic); 
-  background-image: radial-gradient(circle, rgba(147, 51, 234, 0.2) 0%, transparent 80%);
-}
-.item-slot.rarity-legendary { 
-  border-color: var(--rarity-legendary); 
-  background-image: radial-gradient(circle, rgba(234, 88, 12, 0.25) 0%, transparent 80%);
-  box-shadow: inset 0 0 12px rgba(234, 88, 12, 0.3);
-}
-
-.item-icon {
-  font-size: 22px;
-  filter: drop-shadow(0 2px 4px rgba(0,0,0,0.8));
-}
-
-.item-refine {
-  position: absolute;
-  top: 2px;
-  right: 4px;
-  font-size: 9px;
-  color: var(--color-gold-bright);
-  font-weight: bold;
-  font-family: monospace;
-}
-
-/* RPG Overlay Windows (Modals) */
-.modal-overlay {
-  position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
-  background-color: rgba(0, 0, 0, 0.85);
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 12px;
-  z-index: 100;
-  animation: fadeIn 0.1s ease-out;
-}
-
-.modal-content {
   background-color: var(--bg-panel);
-  background-image: radial-gradient(circle at 50% 50%, #211611 0%, #120c09 100%);
-  border: 3px double var(--color-border-accent);
-  outline: 2px solid var(--color-border);
-  outline-offset: -6px;
-  width: 100%;
-  max-width: 328px;
-  padding: 14px;
+}
+
+.rpg-panels-container {
+  display: flex;
+  flex-direction: row;
+  flex: 1;
+  gap: 8px;
+  overflow: hidden;
+  height: calc(100vh - 54px);
+}
+
+/* Vertical columns */
+.rpg-column {
+  flex: 1;
   display: flex;
   flex-direction: column;
-  gap: 10px;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.9);
+  overflow: hidden;
+  height: 100%;
 }
 
-/* Select & Inputs */
-select, input[type="text"] {
-  background-color: #0b0705 !important;
-  border: 2px solid var(--color-border) !important;
-  color: var(--color-text) !important;
-  padding: 8px !important;
-  font-family: 'Cinzel', serif !important;
-  font-size: 12px !important;
-  font-weight: bold !important;
-  outline: none !important;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.9) !important;
-  border-radius: 0px !important;
+.column-header {
+  background: #3a1111; /* Diablo style dark red banner */
+  border-bottom: 2px solid var(--color-border);
+  color: var(--color-gold);
+  text-align: center;
+  font-size: 22px;
+  font-weight: bold;
+  padding: 4px;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
-select:focus, input[type="text"]:focus {
-  border-color: var(--color-gold) !important;
-  box-shadow: inset 0 2px 4px rgba(0,0,0,0.9), 0 0 6px var(--color-gold-glow) !important;
+.column-body {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow-y: auto;
+  padding: 8px;
+  gap: 8px;
 }
 
-option {
-  background-color: #120c09;
-  color: var(--color-text);
+/* ----------------------------------------------------
+   STASH / INVENTORY PANEL (10-Column Grid)
+   ---------------------------------------------------- */
+.stash-tabs {
+  display: flex;
+  gap: 2px;
+  border-bottom: 2px solid var(--color-border);
+  background-color: #121111;
+  padding: 2px 2px 0 2px;
+}
+
+.stash-tab-btn {
+  background: #252423;
+  border: 1px solid var(--color-border);
+  border-bottom: none;
+  color: var(--color-text-dim);
+  padding: 2px 10px;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.stash-tab-btn.active {
+  background: var(--bg-panel);
+  color: var(--color-gold);
+  border-color: var(--color-gold);
+}
+
+.stash-grid {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+  padding: 6px;
+  background-color: #0c0b0a;
+  border: 2px solid var(--color-border);
+  max-height: 240px;
+  overflow-y: auto;
+}
+
+.stash-slot {
+  aspect-ratio: 1;
+  width: 100%;
+  border: 1px solid var(--color-border);
+  background-color: var(--bg-slot);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  cursor: pointer;
+}
+
+.stash-slot:hover {
+  background-color: rgba(212, 180, 124, 0.15);
+  border-color: var(--color-gold);
+}
+
+.stash-slot.active {
+  border-color: var(--color-gold-bright);
+  box-shadow: inset 0 0 6px var(--color-gold);
+}
+
+/* Rarity socket colors */
+.stash-slot.rarity-common { border-color: var(--color-border); }
+.stash-slot.rarity-uncommon { border-color: var(--rarity-uncommon); }
+.stash-slot.rarity-rare { border-color: var(--rarity-rare); }
+.stash-slot.rarity-epic { border-color: var(--rarity-epic); }
+.stash-slot.rarity-legendary { border-color: var(--rarity-legendary); }
+
+.slot-icon {
+  font-size: 24px;
+}
+
+.slot-refine {
+  position: absolute;
+  top: 1px;
+  right: 2px;
+  font-size: 13px;
+  color: var(--color-gold);
   font-weight: bold;
 }
 
-/* Animations */
-@keyframes fadeIn {
-  from { opacity: 0; transform: scale(0.97); }
-  to { opacity: 1; transform: scale(1); }
+/* ----------------------------------------------------
+   HERO PAPER-DOLL SLOTS & SKILLS
+   ---------------------------------------------------- */
+.hero-doll-container {
+  display: flex;
+  justify-content: space-around;
+  background-color: #121111;
+  border: 2px solid var(--color-border);
+  padding: 10px;
 }
 
-/* Toggle Layout Button Styling */
-.layout-toggle-btn {
-  background: linear-gradient(to bottom, #3a2a22 0%, #201510 100%);
-  border: 1px solid var(--color-border);
-  color: var(--color-text);
-  width: 28px;
-  height: 28px;
+.hero-doll-slot {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.hero-doll-slot span {
+  font-size: 15px;
+  color: var(--color-text-dim);
+}
+
+.doll-slot-box {
+  width: 46px;
+  height: 46px;
+  border: 2px solid var(--color-border);
+  background-color: var(--bg-slot);
   display: flex;
   align-items: center;
   justify-content: center;
   cursor: pointer;
-  transition: var(--transition-rpg);
+  position: relative;
 }
 
-.layout-toggle-btn:hover {
-  color: var(--color-gold-bright);
-  border-color: var(--color-gold-bright);
-  box-shadow: 0 0 6px var(--color-gold-glow);
+.doll-slot-box:hover {
+  border-color: var(--color-gold);
 }
-.layout-toggle-btn:active {
-  transform: translateY(1px);
+
+.doll-slot-box.has-item {
+  border-style: solid;
 }
 
 /* ----------------------------------------------------
-   PORTAL MAP SYSTEM
+   CUBE SYNTHESIS 3x3 GRID
+   ---------------------------------------------------- */
+.cube-grid-container {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  padding: 10px;
+  background-color: #121111;
+  border: 2px solid var(--color-border);
+}
+
+.cube-grid-3x3 {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 4px;
+  width: 136px;
+  height: 136px;
+}
+
+.cube-slot-box {
+  width: 42px;
+  height: 42px;
+  border: 1px solid var(--color-border);
+  background-color: var(--bg-slot);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  position: relative;
+}
+
+.cube-slot-box:hover {
+  border-color: var(--color-gold);
+  background-color: rgba(255,255,255,0.02);
+}
+
+/* ----------------------------------------------------
+   RETR-RPG GAUGES & BARS
+   ---------------------------------------------------- */
+.rpg-bar-track {
+  height: 16px;
+  background-color: #000;
+  border: 1px solid var(--color-border);
+  padding: 1px;
+  width: 100%;
+}
+
+.rpg-bar-fill {
+  height: 100%;
+}
+
+.rpg-bar-fill.xp {
+  background-color: #7c3aed;
+}
+
+.rpg-bar-fill.kills {
+  background-color: #dc2626;
+}
+
+/* ----------------------------------------------------
+   UTILITY BUTTONS (Zero SaaS, Sharp Bevels)
+   ---------------------------------------------------- */
+.btn-rpg {
+  background: #2b2521;
+  border: 2px solid var(--color-border);
+  color: var(--color-text);
+  padding: 4px 10px;
+  cursor: pointer;
+  text-align: center;
+  font-size: 17px;
+  text-transform: uppercase;
+}
+
+.btn-rpg:hover:not(:disabled) {
+  border-color: var(--color-gold);
+  color: var(--color-gold);
+  background: #3d3530;
+}
+
+.btn-rpg:active:not(:disabled) {
+  background: #151210;
+}
+
+.btn-rpg:disabled {
+  color: var(--color-text-dark);
+  border-color: #27221e;
+  background: #171413;
+  cursor: not-allowed;
+}
+
+/* Character status logs list */
+.rpg-log-box {
+  font-family: monospace !important;
+  font-size: 15px !important;
+  color: var(--color-text-dim);
+  background-color: #0c0b0a;
+  border: 2px solid var(--color-border);
+  padding: 6px;
+  height: 120px;
+  overflow-y: auto;
+}
+
+.rpg-log-item {
+  line-height: 1.3;
+  border-bottom: 1px dashed #231f1c;
+  padding-bottom: 2px;
+}
+
+.rpg-log-item:first-child {
+  color: #fff;
+}
+
+/* Highlight Text helper */
+.rpg-gold-text {
+  color: var(--color-gold) !important;
+}
+
+/* Close Box button */
+.rpg-close-x {
+  background-color: #450a0a;
+  border: 1px solid var(--color-danger);
+  color: #fca5a5;
+  width: 22px;
+  height: 22px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  font-size: 15px;
+}
+.rpg-close-x:hover {
+  background-color: #991b1b;
+  color: white;
+}
+
+/* ----------------------------------------------------
+   PORTAL MAP SYSTEM (Sharped)
    ---------------------------------------------------- */
 .rpg-map-canvas {
   position: relative;
   width: 100%;
-  height: 380px;
-  border: 3px double var(--color-border-accent);
-  outline: 2px solid var(--color-border);
-  outline-offset: -6px;
+  height: 280px;
+  border: 2px solid var(--color-border);
   overflow: hidden;
-  box-shadow: var(--shadow-inset-box);
-  margin-top: 6px;
+  margin-top: 2px;
 }
 
-.map-act-1 {
-  background: linear-gradient(180deg, #1b381a 0%, #0c1a0c 100%);
-  background-image: 
-    radial-gradient(circle at 30% 20%, rgba(255,255,255,0.03) 0%, transparent 40%),
-    radial-gradient(circle at 70% 80%, rgba(255,255,255,0.03) 0%, transparent 40%);
-}
-
-.map-act-2 {
-  background: linear-gradient(180deg, #dfba86 0%, #8c6a38 100%);
-  background-image: 
-    radial-gradient(circle at 20% 30%, rgba(255,255,255,0.08) 0%, transparent 50%),
-    radial-gradient(circle at 80% 70%, rgba(0,0,0,0.15) 0%, transparent 50%);
-}
-
-.map-act-3 {
-  background: linear-gradient(180deg, #370d0d 0%, #0d0303 100%);
-  background-image: 
-    radial-gradient(circle at 40% 40%, rgba(220,38,38,0.08) 0%, transparent 60%);
-}
+.map-act-1 { background-color: #122115; }
+.map-act-2 { background-color: #453723; }
+.map-act-3 { background-color: #240a0a; }
 
 .map-node {
   position: absolute;
-  width: 24px;
-  height: 24px;
+  width: 22px;
+  height: 22px;
   z-index: 10;
   cursor: pointer;
 }
@@ -699,111 +420,62 @@ option {
 .node-circle {
   width: 100%;
   height: 100%;
-  border-radius: 50% !important; /* Force circular shape for map nodes */
-  border: 2px solid var(--color-border);
-  background-color: #1a1310;
+  border: 1px solid var(--color-border);
+  background-color: #151312;
   display: flex;
   align-items: center;
   justify-content: center;
-  font-family: monospace;
-  font-size: 8px;
-  font-weight: bold;
+  font-size: 11px;
   color: var(--color-text-dim);
-  box-shadow: 0 2px 4px rgba(0,0,0,0.6), inset 0 0 4px rgba(0,0,0,0.8);
-  transition: var(--transition-rpg);
+  border-radius: 50% !important;
 }
 
 .map-node:hover .node-circle {
-  border-color: var(--color-gold-bright);
+  border-color: var(--color-gold);
   color: #fff;
-  transform: scale(1.1);
 }
 
-/* Passed Node */
 .map-node.passed .node-circle {
   border-color: var(--color-gold);
-  background-color: #3b281d;
-  color: var(--color-gold-bright);
+  color: var(--color-gold);
 }
 
-/* Current Active Node */
 .map-node.active .node-circle {
-  border-color: var(--color-success);
-  background-color: #1b3d1f;
+  border-color: var(--class-rogue);
   color: #fff;
-  outline: 3px solid rgba(34, 197, 94, 0.4);
-  animation: pulse-green 1.5s infinite ease-in-out;
-  box-shadow: 0 0 10px rgba(34, 197, 94, 0.6);
+  outline: 2px solid rgba(51, 255, 51, 0.4);
 }
 
-/* Active Boss Node */
 .map-node.boss.active .node-circle {
-  border-color: var(--color-danger);
-  background-color: #450a0a;
-  outline: 3px solid rgba(220, 38, 38, 0.4);
-  animation: pulse-red 1.5s infinite ease-in-out;
-  box-shadow: 0 0 12px rgba(220, 38, 38, 0.8);
+  border-color: var(--class-warrior);
+  outline: 2px solid rgba(255, 51, 51, 0.4);
 }
 
-/* Locked Node */
-.map-node.locked {
-  cursor: not-allowed;
-}
 .map-node.locked .node-circle {
-  border-color: #3d2d25;
-  background-color: #0b0705;
-  color: var(--color-text-dark);
-  box-shadow: none;
+  color: #4a433c;
+  border-color: #25211e;
+  background-color: #090807;
 }
 
-/* Text tag for stage coordinate name */
 .node-label {
   position: absolute;
   top: 50%;
   transform: translateY(-50%);
-  background-color: rgba(9, 6, 5, 0.9);
+  background-color: #0c0b0a;
   border: 1px solid var(--color-border);
-  padding: 1px 4px;
-  font-size: 8px;
-  font-weight: bold;
+  padding: 0 4px;
+  font-size: 11px;
   color: var(--color-text-dim);
   white-space: nowrap;
-  pointer-events: none;
-  font-family: monospace;
 }
 
-.node-label.pos-left {
-  right: calc(100% + 6px);
-}
-.node-label.pos-right {
-  left: calc(100% + 6px);
-}
+.node-label.pos-left { right: calc(100% + 4px); }
+.node-label.pos-right { left: calc(100% + 4px); }
 
-/* Current Node Flag */
 .node-flag {
   position: absolute;
-  top: -14px;
+  top: -12px;
   left: 50%;
   transform: translateX(-50%);
-  font-size: 10px;
-  animation: bounce-flag 1s infinite alternate ease-in-out;
-  pointer-events: none;
-  z-index: 12;
-}
-
-@keyframes pulse-green {
-  0% { outline-width: 2px; outline-color: rgba(34, 197, 94, 0.4); }
-  50% { outline-width: 6px; outline-color: rgba(34, 197, 94, 0.1); }
-  100% { outline-width: 2px; outline-color: rgba(34, 197, 94, 0.4); }
-}
-
-@keyframes pulse-red {
-  0% { outline-width: 2px; outline-color: rgba(220, 38, 38, 0.4); }
-  50% { outline-width: 6px; outline-color: rgba(220, 38, 38, 0.1); }
-  100% { outline-width: 2px; outline-color: rgba(220, 38, 38, 0.4); }
-}
-
-@keyframes bounce-flag {
-  from { transform: translate(-50%, 0); }
-  to { transform: translate(-50%, -4px); }
+  font-size: 11px;
 }

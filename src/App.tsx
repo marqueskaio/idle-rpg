@@ -1,19 +1,44 @@
 import React, { useEffect, useState } from 'react';
-import { useGameStore } from './game/store';
+import { useGameStore, calculateCharacterStats, CLASS_SKILLS } from './game/store';
 import { startGameLoop, stopGameLoop } from './game/engine';
 import { Header } from './components/Header';
-import { StageProgress } from './components/StageProgress';
-import { PartyPanel } from './components/PartyPanel';
-import { InventoryPanel } from './components/InventoryPanel';
-import { CharacterModal } from './components/CharacterModal';
 import { PortalPanel } from './components/PortalPanel';
+import { CubePanel } from './components/CubePanel';
+import type { Item, CharacterClass } from './game/types';
 
 export const App: React.FC = () => {
-  const { layoutMode, combatLog, toggleLayoutMode } = useGameStore();
-  const [activeManageCharId, setActiveManageCharId] = useState<string | null>(null);
-  const [widgetTab, setWidgetTab] = useState<'party' | 'inventory' | 'portal'>('party');
+  const { 
+    party, 
+    inventory, 
+    runeStash, 
+    combatLog, 
+    gold, 
+    enchantStones,
+    craftItem,
+    sellItem,
+    dismantleItem,
+    enchantItem,
+    hireCharacter,
+    equipItem,
+    unequipItem,
+    socketRune,
+    unsocketRune,
+    allocateSkillPoint,
+    addToCube
+  } = useGameStore();
 
-  // Start background game loop on component mount, and clean up on unmount
+  const [activeRightTab, setActiveRightTab] = useState<'portal' | 'cube'>('portal');
+  const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
+  const [selectedStashItemId, setSelectedStashItemId] = useState<string | null>(null);
+  const [activeGearSlotSelect, setActiveGearSlotSelect] = useState<'weapon' | 'armor' | 'ring' | null>(null);
+  const [activeRuneSlotSelect, setActiveRuneSlotSelect] = useState<number | null>(null);
+  
+  // Hiring Form Local State
+  const [isHiring, setIsHiring] = useState(false);
+  const [hireName, setHireName] = useState('');
+  const [hireClass, setHireClass] = useState<CharacterClass>('Warrior');
+
+  // Start background game loop
   useEffect(() => {
     startGameLoop();
     return () => {
@@ -21,159 +46,516 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  const latestLog = combatLog[0] || 'Iniciando o combate...';
+  // Sync selected hero when party changes
+  useEffect(() => {
+    if (party.length > 0) {
+      if (!selectedHeroId || !party.some(c => c.id === selectedHeroId)) {
+        setSelectedHeroId(party[0].id);
+      }
+    } else {
+      setSelectedHeroId(null);
+    }
+  }, [party, selectedHeroId]);
+
+  // Find active selected hero
+  const activeHero = party.find(c => c.id === selectedHeroId) || null;
+  const activeHeroStats = activeHero ? calculateCharacterStats(activeHero) : null;
+
+  // Stash grid calculation: fixed 50 slots
+  const totalStashSlots = 50;
+  const stashSlots = Array(totalStashSlots).fill(null);
+  inventory.forEach((item, index) => {
+    if (index < totalStashSlots) {
+      stashSlots[index] = item;
+    }
+  });
+
+  const selectedStashItem = inventory.find(i => i.id === selectedStashItemId) || null;
+
+  const handleHireSubmit = (e: React.FormEvent) => {
+    e.preventDefault();
+    hireCharacter(hireName, hireClass);
+    setHireName('');
+    setIsHiring(false);
+  };
+
+  const handleStashSlotClick = (item: Item | null) => {
+    if (!item) {
+      setSelectedStashItemId(null);
+      return;
+    }
+
+    if (activeRightTab === 'cube') {
+      // If cube synthesis tab is open, clicking stash item places it in the cube
+      addToCube(item.id);
+      setSelectedStashItemId(null);
+    } else {
+      // Else, select it to view details and sell/dismantle
+      setSelectedStashItemId(item.id);
+    }
+  };
+
+  const getItemTypeEmoji = (type: string) => {
+    switch (type) {
+      case 'weapon': return '🗡️';
+      case 'armor': return '🛡️';
+      case 'ring': return '💍';
+      default: return '📦';
+    }
+  };
+
+  const getClassEmoji = (cls: CharacterClass) => {
+    switch (cls) {
+      case 'Warrior': return '🛡️';
+      case 'Mage': return '🔮';
+      case 'Rogue': return '🗡️';
+    }
+  };
+
+  const getRarityColor = (rarity: string) => {
+    return `var(--rarity-${rarity})`;
+  };
+
+  // Enchantment costs
+  const getEnchantCosts = (item: Item) => {
+    const stoneCost = 1 + Math.floor(item.refineLevel / 3);
+    const goldCost = Math.round((item.refineLevel + 1) * 80);
+    const successRate = Math.max(0.35, 1.0 - Math.max(0, item.refineLevel - 3) * 0.15);
+    return { stoneCost, goldCost, successRate: Math.round(successRate * 100) };
+  };
 
   return (
-    <div 
-      style={{
-        display: 'flex',
-        alignItems: 'center',
-        justifyContent: 'center',
-        minHeight: layoutMode === 'taskbar' ? 'auto' : '100vh',
-        background: layoutMode === 'taskbar' ? 'transparent' : 'rgba(0, 0, 0, 0.95)',
-        padding: layoutMode === 'taskbar' ? 0 : '20px'
-      }}
-    >
-      <div className={`app-wrapper mode-${layoutMode}`}>
+    <div className="rpg-desktop-layout">
+      {/* Top Banner Status Bar */}
+      <Header />
+
+      {/* Primary 3-Panel Space */}
+      <div className="rpg-panels-container">
         
         {/* ========================================================
-            TASKBAR MODE RENDERING (Horizontal Strip)
+            LEFT COLUMN: STASH (Inventory Grid & Actions)
             ======================================================== */}
-        {layoutMode === 'taskbar' && (
-          <>
-            {/* Title, CP, Gold, Stones */}
-            <Header />
-
-            {/* Difficulty, Act, Stage and Kills Progress Bar */}
-            <StageProgress />
-
-            {/* Small Avatars list of active heroes */}
-            <PartyPanel onManageChar={(char) => setActiveManageCharId(char.id)} />
-
-            {/* Scrolling log ticker (only shows the single latest entry) */}
-            <div 
-              className="taskbar-section" 
-              style={{ 
-                flex: 2, 
-                borderRight: 'none', 
-                fontSize: '11px', 
-                color: 'var(--color-text-dim)', 
-                overflow: 'hidden',
-                whiteSpace: 'nowrap',
-                textOverflow: 'ellipsis',
-                display: 'flex',
-                alignItems: 'center',
-                background: 'rgba(0,0,0,0.3)',
-                padding: '4px 10px',
-                borderRadius: '4px',
-                height: '42px',
-                maxWidth: '300px'
-              }}
-              title={latestLog}
-            >
-              <span style={{ marginRight: '6px' }}>👁️‍🗨️</span>
-              <span 
-                style={{ 
-                  animation: 'fadeIn 0.2s ease-out',
-                  display: 'inline-block' 
-                }}
-              >
-                {latestLog}
-              </span>
+        <div className="rpg-column panel-border">
+          <div className="column-header">STASH</div>
+          
+          <div className="column-body" style={{ gap: '6px' }}>
+            {/* Stash tabs headers */}
+            <div className="stash-tabs">
+              <button className="stash-tab-btn active">Baú 1</button>
+              <button className="stash-tab-btn" disabled>Baú 2</button>
+              <button className="stash-tab-btn" disabled>+</button>
             </div>
 
-            {/* Toggles bar back to Widget */}
-            <div style={{ marginLeft: 'auto', display: 'flex', gap: '8px' }}>
-              <button 
-                onClick={toggleLayoutMode} 
-                className="layout-toggle-btn"
-                title="Maximizar para janela de Widget"
+            {/* 10-Column Grid slots */}
+            <div className="stash-grid">
+              {stashSlots.map((item, idx) => (
+                <div
+                  key={idx}
+                  className={`stash-slot ${item ? `rarity-${item.rarity}` : ''} ${selectedStashItemId === item?.id ? 'active' : ''}`}
+                  onClick={() => handleStashSlotClick(item)}
+                >
+                  {item ? (
+                    <>
+                      <span className="slot-icon">{getItemTypeEmoji(item.type)}</span>
+                      <span className="slot-refine">+{item.refineLevel}</span>
+                    </>
+                  ) : (
+                    <span style={{ opacity: 0.05, fontSize: '18px' }}>·</span>
+                  )}
+                </div>
+              ))}
+            </div>
+
+            {/* Quick Crafting Box */}
+            <div className="rpg-panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', backgroundColor: '#131211', padding: '6px' }}>
+              <div style={{ display: 'flex', flexDirection: 'column' }}>
+                <span className="rpg-font rpg-gold-text" style={{ fontSize: '16px' }}>Forja Arcana</span>
+                <span style={{ fontSize: '13px', color: 'var(--color-text-dim)' }}>Custo: 150g e 3 Pedras.</span>
+              </div>
+              <button
+                className="btn-rpg"
+                onClick={craftItem}
+                disabled={gold < 150 || enchantStones < 3 || party.length === 0}
+                style={{ fontSize: '14px', padding: '2px 8px' }}
               >
-                📱
+                🔨 Forjar
               </button>
             </div>
-          </>
-        )}
+
+            {/* Item Action / Details Box */}
+            {selectedStashItem ? (
+              <div className="rpg-panel" style={{ backgroundColor: '#131211', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '15px' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
+                  <strong style={{ color: getRarityColor(selectedStashItem.rarity), fontSize: '17px' }}>
+                    {selectedStashItem.name} +{selectedStashItem.refineLevel}
+                  </strong>
+                  <button className="rpg-close-x" onClick={() => setSelectedStashItemId(null)}>X</button>
+                </div>
+                
+                <div style={{ display: 'flex', gap: '10px', color: 'var(--color-text-dim)', fontSize: '14px' }}>
+                  {selectedStashItem.attack > 0 && <span>⚔️Atk: <strong style={{ color: 'white' }}>{Math.round(selectedStashItem.attack * (1 + selectedStashItem.refineLevel * 0.15))}</strong></span>}
+                  {selectedStashItem.defense > 0 && <span>🛡️Def: <strong style={{ color: 'white' }}>{Math.round(selectedStashItem.defense * (1 + selectedStashItem.refineLevel * 0.15))}</strong></span>}
+                  {selectedStashItem.hp > 0 && <span>❤️HP: <strong style={{ color: 'white' }}>{Math.round(selectedStashItem.hp * (1 + selectedStashItem.refineLevel * 0.15))}</strong></span>}
+                </div>
+
+                {(() => {
+                  const { stoneCost, goldCost, successRate } = getEnchantCosts(selectedStashItem);
+                  return (
+                    <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', padding: '2px 0' }}>
+                      Melhorar: 🪙{goldCost} + 💎{stoneCost} Pedras | Chance: {successRate}%
+                    </div>
+                  );
+                })()}
+
+                <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
+                  <button
+                    className="btn-rpg"
+                    onClick={() => enchantItem(selectedStashItem.id)}
+                    disabled={gold < getEnchantCosts(selectedStashItem).goldCost || enchantStones < getEnchantCosts(selectedStashItem).stoneCost}
+                    style={{ flex: 2, fontSize: '14px', padding: '2px 0' }}
+                  >
+                    🔮 Melhorar
+                  </button>
+                  <button
+                    className="btn-rpg"
+                    onClick={() => { sellItem(selectedStashItem.id); setSelectedStashItemId(null); }}
+                    style={{ flex: 1, fontSize: '14px', padding: '2px 0' }}
+                  >
+                    🪙 Vender
+                  </button>
+                  <button
+                    className="btn-rpg"
+                    onClick={() => { dismantleItem(selectedStashItem.id); setSelectedStashItemId(null); }}
+                    style={{ flex: 1, fontSize: '14px', padding: '2px 0', color: 'var(--color-danger)', borderColor: '#7f1d1d' }}
+                  >
+                    🔨 Desman.
+                  </button>
+                </div>
+              </div>
+            ) : (
+              <div className="rpg-panel" style={{ flex: 1, display: 'flex', alignItems: 'center', justifyContent: 'center', color: 'var(--color-text-dim)', fontSize: '15px', backgroundColor: '#0d0c0b' }}>
+                <span>Clique em um item do Baú para ver detalhes ou transmutar.</span>
+              </div>
+            )}
+          </div>
+        </div>
 
         {/* ========================================================
-            WIDGET MODE RENDERING (Compact Floating Dashboard)
+            MIDDLE COLUMN: HERO (Equipment, Character Stats & Skills)
             ======================================================== */}
-        {layoutMode === 'widget' && (
-          <>
-            {/* Header: Gold, CP, stones */}
-            <Header />
-
-            {/* Stage Progress: Act/Stage numbers and kills bar */}
-            <div style={{ padding: '16px 16px 0 16px' }}>
-              <StageProgress />
+        <div className="rpg-column panel-border">
+          <div className="column-header">HERO</div>
+          
+          <div className="column-body">
+            {/* Active Group Selector */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+              <span className="rpg-font" style={{ fontSize: '16px', color: 'var(--color-text-dim)' }}>Grupo ({party.length}/3)</span>
+              {party.length < 3 && !isHiring && (
+                <button className="btn-rpg" onClick={() => setIsHiring(true)} style={{ padding: '1px 8px', fontSize: '14px' }}>
+                  ➕ Recrutar
+                </button>
+              )}
             </div>
 
-            {/* Main Tabs body */}
-            <main className="app-main">
-              {widgetTab === 'party' && (
-                <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: 1 }}>
-                  {/* Party Cards Grid */}
-                  <PartyPanel onManageChar={(char) => setActiveManageCharId(char.id)} />
-                  
-                  {/* Miniature logs section directly in screen */}
-                  <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', flex: 1 }}>
-                    <span style={{ fontSize: '11px', color: 'var(--color-gold)', fontWeight: 'bold' }}>
-                      ⚔️ Registro de Batalha (Logs)
-                    </span>
-                    <div className="combat-log-container" style={{ minHeight: '140px', flex: 1 }}>
-                      {combatLog.slice(0, 15).map((log, index) => (
-                        <div key={index} className="combat-log-item" style={{ color: index === 0 ? 'white' : 'var(--color-text-dim)' }}>
-                          {log}
-                        </div>
-                      ))}
-                    </div>
-                  </div>
+            {/* Recrutar form */}
+            {isHiring && (
+              <form onSubmit={handleHireSubmit} className="rpg-panel" style={{ display: 'flex', flexDirection: 'column', gap: '6px', border: '1px solid var(--color-border)' }}>
+                <div style={{ display: 'flex', gap: '6px' }}>
+                  <input
+                    type="text"
+                    value={hireName}
+                    onChange={e => setHireName(e.target.value)}
+                    placeholder="Nome..."
+                    maxLength={10}
+                    style={{ flex: 1 }}
+                    required
+                  />
+                  <select value={hireClass} onChange={e => setHireClass(e.target.value as CharacterClass)}>
+                    <option value="Warrior">🛡️ Guerreiro</option>
+                    <option value="Mage">🔮 Mago</option>
+                    <option value="Rogue">🗡️ Ladino</option>
+                  </select>
+                </div>
+                <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
+                  <button type="button" className="btn-rpg" onClick={() => setIsHiring(false)} style={{ fontSize: '13px', padding: '1px 6px' }}>Mudar</button>
+                  <button type="submit" className="btn-rpg" style={{ fontSize: '13px', padding: '1px 6px', color: 'var(--color-gold)' }}>Contratar</button>
+                </div>
+              </form>
+            )}
+
+            {/* Party heroes icons */}
+            <div style={{ display: 'flex', gap: '4px' }}>
+              {party.map(char => (
+                <button
+                  key={char.id}
+                  className={`btn-secondary ${selectedHeroId === char.id ? 'active' : ''}`}
+                  onClick={() => { setSelectedHeroId(char.id); setActiveGearSlotSelect(null); setActiveRuneSlotSelect(null); }}
+                  style={{ flex: 1, padding: '3px', fontSize: '15px', textTransform: 'none' }}
+                >
+                  {getClassEmoji(char.class)} {char.name} (Nv.{char.level})
+                </button>
+              ))}
+              {party.length === 0 && (
+                <div style={{ textAlign: 'center', width: '100%', padding: '12px', fontSize: '14px', color: 'var(--color-text-dim)', border: '1px dashed var(--color-border)' }}>
+                  Nenhum herói recrutado.
                 </div>
               )}
-
-              {widgetTab === 'inventory' && (
-                <InventoryPanel />
-              )}
-
-              {widgetTab === 'portal' && (
-                <PortalPanel />
-              )}
-            </main>
-
-            {/* Tabs Selector Footer */}
-            <div className="app-tabs">
-              <button 
-                className={`tab-btn ${widgetTab === 'party' ? 'active' : ''}`}
-                onClick={() => setWidgetTab('party')}
-              >
-                <span>👥</span>
-                <span>Grupo</span>
-              </button>
-              <button 
-                className={`tab-btn ${widgetTab === 'inventory' ? 'active' : ''}`}
-                onClick={() => setWidgetTab('inventory')}
-              >
-                <span>🎒</span>
-                <span>Baú / Forja</span>
-              </button>
-              <button 
-                className={`tab-btn ${widgetTab === 'portal' ? 'active' : ''}`}
-                onClick={() => setWidgetTab('portal')}
-              >
-                <span>🗺️</span>
-                <span>Portal</span>
-              </button>
             </div>
-          </>
-        )}
 
-        {/* Character Detail/Management Modal Overlay */}
-        {activeManageCharId && (
-          <CharacterModal 
-            charId={activeManageCharId} 
-            onClose={() => setActiveManageCharId(null)} 
-          />
-        )}
+            {activeHero && activeHeroStats && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+                
+                {/* Hero status bar (level, XP) */}
+                <div className="progress-container">
+                  <div className="progress-header" style={{ fontSize: '13px' }}>
+                    <span>XP herói (Nv.{activeHero.level})</span>
+                    <span>{activeHero.xp} / {activeHero.xpNeeded}</span>
+                  </div>
+                  <div className="rpg-bar-track">
+                    <div className="rpg-bar-fill xp" style={{ width: `${Math.min(100, (activeHero.xp / activeHero.xpNeeded) * 100)}%` }} />
+                  </div>
+                </div>
+
+                {/* Stats Panel */}
+                <div className="rpg-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', fontSize: '14px', padding: '6px' }}>
+                  <div>⭐ Poder: <strong className="rpg-gold-text">{activeHeroStats.power}</strong></div>
+                  <div>⚔️ Ataque: <strong>{activeHeroStats.attack}</strong></div>
+                  <div>🛡️ Defesa: <strong>{activeHeroStats.defense}</strong></div>
+                  <div>❤️ HP: <strong>{activeHeroStats.hp}</strong></div>
+                </div>
+
+                {/* Equipment Paper-Doll */}
+                <div className="hero-doll-container">
+                  
+                  {/* Weapon socket */}
+                  <div className="hero-doll-slot">
+                    <span>Arma</span>
+                    <div
+                      className={`doll-slot-box ${activeHero.equipment.weapon ? `rarity-${activeHero.equipment.weapon.rarity}` : ''}`}
+                      onClick={() => { setActiveGearSlotSelect(activeGearSlotSelect === 'weapon' ? null : 'weapon'); setActiveRuneSlotSelect(null); }}
+                    >
+                      {activeHero.equipment.weapon ? (
+                        <>
+                          <span className="slot-icon">🗡️</span>
+                          <span className="slot-refine">+{activeHero.equipment.weapon.refineLevel}</span>
+                        </>
+                      ) : '➕'}
+                    </div>
+                    {activeHero.equipment.weapon && (
+                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'weapon')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                    )}
+                  </div>
+
+                  {/* Armor socket */}
+                  <div className="hero-doll-slot">
+                    <span>Armadura</span>
+                    <div
+                      className={`doll-slot-box ${activeHero.equipment.armor ? `rarity-${activeHero.equipment.armor.rarity}` : ''}`}
+                      onClick={() => { setActiveGearSlotSelect(activeGearSlotSelect === 'armor' ? null : 'armor'); setActiveRuneSlotSelect(null); }}
+                    >
+                      {activeHero.equipment.armor ? (
+                        <>
+                          <span className="slot-icon">👕</span>
+                          <span className="slot-refine">+{activeHero.equipment.armor.refineLevel}</span>
+                        </>
+                      ) : '➕'}
+                    </div>
+                    {activeHero.equipment.armor && (
+                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'armor')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                    )}
+                  </div>
+
+                  {/* Ring socket */}
+                  <div className="hero-doll-slot">
+                    <span>Anel</span>
+                    <div
+                      className={`doll-slot-box ${activeHero.equipment.ring ? `rarity-${activeHero.equipment.ring.rarity}` : ''}`}
+                      onClick={() => { setActiveGearSlotSelect(activeGearSlotSelect === 'ring' ? null : 'ring'); setActiveRuneSlotSelect(null); }}
+                    >
+                      {activeHero.equipment.ring ? (
+                        <>
+                          <span className="slot-icon">💍</span>
+                          <span className="slot-refine">+{activeHero.equipment.ring.refineLevel}</span>
+                        </>
+                      ) : '➕'}
+                    </div>
+                    {activeHero.equipment.ring && (
+                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'ring')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                    )}
+                  </div>
+
+                </div>
+
+                {/* Sublist selection menu for Gear sockets */}
+                {activeGearSlotSelect && (
+                  <div className="rpg-panel" style={{ padding: '6px', backgroundColor: '#141312', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Selecionar {activeGearSlotSelect === 'weapon' ? 'Arma' : activeGearSlotSelect === 'armor' ? 'Armadura' : 'Anel'}</span>
+                      <button className="rpg-close-x" onClick={() => setActiveGearSlotSelect(null)}>X</button>
+                    </div>
+                    <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {inventory.filter(i => i.type === activeGearSlotSelect).length === 0 ? (
+                        <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', textAlign: 'center', padding: '4px' }}>Nenhum item compatível no baú.</div>
+                      ) : (
+                        inventory
+                          .filter(i => i.type === activeGearSlotSelect)
+                          .map(item => (
+                            <div
+                              key={item.id}
+                              className="stash-slot"
+                              onClick={() => { equipItem(activeHero.id, item.id); setActiveGearSlotSelect(null); }}
+                              style={{ width: '100%', height: 'auto', display: 'flex', justifyContent: 'space-between', padding: '4px', fontSize: '13px', borderStyle: 'solid' }}
+                            >
+                              <span style={{ color: getRarityColor(item.rarity) }}>{item.name} +{item.refineLevel}</span>
+                              <span style={{ color: activeHero.level >= item.levelRequired ? 'var(--color-success)' : 'var(--color-danger)' }}>Req: Nv.{item.levelRequired}</span>
+                            </div>
+                          ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Diamond Rune Sockets (counter-rotated for diamond geometry) */}
+                <div style={{ display: 'flex', justifyItems: 'center', justifyContent: 'space-around', padding: '6px 0', border: '1px solid var(--color-border)', backgroundColor: '#131211' }}>
+                  {activeHero.runes.map((rune, rIdx) => (
+                    <div key={rIdx} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                      <div
+                        className="item-slot"
+                        onClick={() => { setActiveRuneSlotSelect(activeRuneSlotSelect === rIdx ? null : rIdx); setActiveGearSlotSelect(null); }}
+                        style={{
+                          width: '32px',
+                          height: '32px',
+                          transform: 'rotate(45deg)',
+                          borderColor: rune ? 'var(--color-gold)' : 'var(--color-border)',
+                          borderStyle: rune ? 'solid' : 'dashed',
+                          margin: '4px 0'
+                        }}
+                      >
+                        {rune ? (
+                          <div style={{ transform: 'rotate(-45deg)', display: 'flex', flexDirection: 'column', alignItems: 'center' }} title={rune.name}>
+                            <span style={{ fontSize: '14px' }}>🔷</span>
+                          </div>
+                        ) : (
+                          <span style={{ transform: 'rotate(-45deg)', fontSize: '11px', color: 'var(--color-text-dim)' }}>+</span>
+                        )}
+                      </div>
+                      <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>Runa {rIdx + 1}</span>
+                      {rune && (
+                        <button className="btn-danger" onClick={() => unsocketRune(activeHero.id, rIdx)} style={{ fontSize: '10px', padding: '0 2px', marginTop: '2px' }}>Soltar</button>
+                      )}
+                    </div>
+                  ))}
+                </div>
+
+                {/* Sublist selection menu for Rune sockets */}
+                {activeRuneSlotSelect !== null && (
+                  <div className="rpg-panel" style={{ padding: '6px', backgroundColor: '#141312', border: '1px solid var(--color-border)' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Encaixar Runa no Slot {activeRuneSlotSelect + 1}</span>
+                      <button className="rpg-close-x" onClick={() => setActiveRuneSlotSelect(null)}>X</button>
+                    </div>
+                    <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
+                      {runeStash.length === 0 ? (
+                        <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', textAlign: 'center', padding: '4px' }}>Nenhuma runa livre no baú.</div>
+                      ) : (
+                        runeStash.map(rune => (
+                          <div
+                            key={rune.id}
+                            className="stash-slot"
+                            onClick={() => { socketRune(activeHero.id, rune.id, activeRuneSlotSelect); setActiveRuneSlotSelect(null); }}
+                            style={{ width: '100%', height: 'auto', display: 'flex', justifyContent: 'space-between', padding: '4px', fontSize: '13px' }}
+                          >
+                            <span style={{ color: 'var(--class-mage)' }}>{rune.name}</span>
+                            <span style={{ fontSize: '12px' }}>
+                              {rune.statType === 'attack' ? `Atk +${rune.value}` : rune.statType === 'defense' ? `Def +${rune.value}` : `HP +${rune.value}`}
+                            </span>
+                          </div>
+                        ))
+                      )}
+                    </div>
+                  </div>
+                )}
+
+                {/* Skill point allocation */}
+                <div className="rpg-panel" style={{ display: 'flex', flexDirection: 'column', gap: '4px', padding: '6px' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '14px' }}>
+                    <span className="rpg-gold-text">Pontos de Habilidade: {activeHero.skillPoints}</span>
+                  </div>
+                  <div style={{ display: 'flex', gap: '4px' }}>
+                    {CLASS_SKILLS[activeHero.class].map(skill => {
+                      const curLvl = activeHero.skills[skill.id] || 0;
+                      const isMax = curLvl >= skill.maxLevel;
+                      return (
+                        <div key={skill.id} style={{ flex: 1, backgroundColor: '#090807', border: '1px solid var(--color-border)', padding: '4px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
+                          <div>
+                            <div style={{ fontSize: '13px', color: 'white', fontWeight: 'bold' }}>{skill.name}</div>
+                            <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', height: '28px', overflow: 'hidden' }}>{skill.description}</div>
+                          </div>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>
+                            <span style={{ fontSize: '12px', color: 'var(--color-gold)' }}>Nv.{curLvl}/{skill.maxLevel}</span>
+                            <button
+                              className="btn-rpg"
+                              onClick={() => allocateSkillPoint(activeHero.id, skill.id)}
+                              disabled={activeHero.skillPoints <= 0 || isMax}
+                              style={{ padding: '0 6px', fontSize: '11px' }}
+                            >
+                              +
+                            </button>
+                          </div>
+                        </div>
+                      );
+                    })}
+                  </div>
+                </div>
+
+              </div>
+            )}
+
+            {/* Battle Logs box */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
+              <span className="rpg-font rpg-gold-text" style={{ fontSize: '15px' }}>⚔️ Registro de Batalha (Logs)</span>
+              <div className="rpg-log-box">
+                {combatLog.slice(0, 15).map((log, index) => (
+                  <div key={index} className="rpg-log-item">
+                    {log}
+                  </div>
+                ))}
+              </div>
+            </div>
+
+          </div>
+        </div>
+
+        {/* ========================================================
+            RIGHT COLUMN: PORTAL & CUBE (Toggleable visual tabs)
+            ======================================================== */}
+        <div className="rpg-column panel-border">
+          {/* Tabs header selector */}
+          <div style={{ display: 'flex', borderBottom: '2px solid var(--color-border)' }}>
+            <button
+              className={`tab-btn ${activeRightTab === 'portal' ? 'active' : ''}`}
+              onClick={() => setActiveRightTab('portal')}
+              style={{ flex: 1, padding: '4px', fontSize: '20px', textTransform: 'uppercase' }}
+            >
+              🗺️ Portal Map
+            </button>
+            <button
+              className={`tab-btn ${activeRightTab === 'cube' ? 'active' : ''}`}
+              onClick={() => setActiveRightTab('cube')}
+              style={{ flex: 1, padding: '4px', fontSize: '20px', textTransform: 'uppercase' }}
+            >
+              📦 Transmutador
+            </button>
+          </div>
+
+          <div className="column-body" style={{ padding: '4px' }}>
+            {activeRightTab === 'portal' ? (
+              <PortalPanel />
+            ) : (
+              <CubePanel />
+            )}
+          </div>
+        </div>
 
       </div>
     </div>

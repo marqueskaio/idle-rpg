@@ -67,6 +67,7 @@ export interface GameState {
   party: Character[]; // Max 3 characters
   inventory: Item[];  // Equipment stash
   runeStash: Rune[];  // Unequipped runes
+  cubeSlots: (Item | null)[]; // 3x3 grid items
   layoutMode: 'widget' | 'taskbar';
   combatLog: string[];
   globalCombatPower: number;

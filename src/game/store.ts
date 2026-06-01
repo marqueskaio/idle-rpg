@@ -236,6 +236,11 @@ interface GameActions {
   resetGame: () => void;
   toggleLayoutMode: () => void;
   addLog: (message: string) => void;
+  addToCube: (itemId: string) => void;
+  removeFromCube: (slotIndex: number) => void;
+  clearCube: () => void;
+  autoFillCube: () => void;
+  synthesizeCube: () => void;
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -248,6 +253,7 @@ export const useGameStore = create<GameState & GameActions>()(
       party: [],
       inventory: [],
       runeStash: [],
+      cubeSlots: Array(9).fill(null),
       layoutMode: 'widget',
       combatLog: ['Bem-vindo ao Idle RPG! Crie seu primeiro herói para começar.'],
       globalCombatPower: 0,
@@ -827,13 +833,148 @@ export const useGameStore = create<GameState & GameActions>()(
           party: [],
           inventory: [],
           runeStash: [],
+          cubeSlots: Array(9).fill(null),
           globalCombatPower: 0
         };
       }),
 
       toggleLayoutMode: () => set((state) => ({
         layoutMode: state.layoutMode === 'widget' ? 'taskbar' : 'widget'
-      }))
+      })),
+
+      addToCube: (itemId: string) => set((state) => {
+        const item = state.inventory.find(i => i.id === itemId);
+        if (!item) return {};
+
+        const emptyIdx = state.cubeSlots.findIndex(s => s === null);
+        if (emptyIdx === -1) {
+          setTimeout(() => get().addLog('⚠️ [Cubo] O cubo está cheio!'), 10);
+          return {};
+        }
+
+        const updatedCube = [...state.cubeSlots];
+        updatedCube[emptyIdx] = item;
+
+        return {
+          cubeSlots: updatedCube,
+          inventory: state.inventory.filter(i => i.id !== itemId)
+        };
+      }),
+
+      removeFromCube: (slotIndex: number) => set((state) => {
+        const item = state.cubeSlots[slotIndex];
+        if (!item) return {};
+
+        const updatedCube = [...state.cubeSlots];
+        updatedCube[slotIndex] = null;
+
+        return {
+          cubeSlots: updatedCube,
+          inventory: [...state.inventory, item]
+        };
+      }),
+
+      clearCube: () => set((state) => {
+        const itemsToReturn = state.cubeSlots.filter((i): i is Item => i !== null);
+        if (itemsToReturn.length === 0) return {};
+
+        return {
+          cubeSlots: Array(9).fill(null),
+          inventory: [...state.inventory, ...itemsToReturn]
+        };
+      }),
+
+      autoFillCube: () => set((state) => {
+        const itemsToReturn = state.cubeSlots.filter((i): i is Item => i !== null);
+        const activeInventory = [...state.inventory, ...itemsToReturn];
+
+        const grouped: { [rarity in ItemRarity]?: Item[] } = {};
+        activeInventory.forEach(item => {
+          if (!grouped[item.rarity]) grouped[item.rarity] = [];
+          grouped[item.rarity]!.push(item);
+        });
+
+        const eligibleRarity = (['common', 'uncommon', 'rare', 'epic', 'legendary'] as ItemRarity[]).find(r => (grouped[r]?.length || 0) >= 9);
+
+        if (!eligibleRarity) {
+          setTimeout(() => get().addLog('⚠️ [Cubo] Não há 9 itens do mesmo grau para preenchimento automático!'), 10);
+          return {
+            cubeSlots: state.cubeSlots,
+            inventory: state.inventory
+          };
+        }
+
+        const itemsToPlace = grouped[eligibleRarity]!.slice(0, 9);
+        const itemsToPlaceIds = new Set(itemsToPlace.map(i => i.id));
+        const nextInventory = activeInventory.filter(i => !itemsToPlaceIds.has(i.id));
+
+        setTimeout(() => get().addLog(`🧪 [Cubo] Preenchido com 9 itens de grau ${eligibleRarity}.`), 10);
+
+        return {
+          cubeSlots: itemsToPlace,
+          inventory: nextInventory
+        };
+      }),
+
+      synthesizeCube: () => set((state) => {
+        const slots = state.cubeSlots;
+        if (slots.some(s => s === null)) {
+          setTimeout(() => get().addLog('⚠️ [Cubo] Preencha os 9 slots do cubo para sintetizar.'), 10);
+          return {};
+        }
+
+        const firstItem = slots[0]!;
+        const targetRarity = firstItem.rarity;
+        const allSame = slots.every(s => s!.rarity === targetRarity);
+
+        if (!allSame) {
+          setTimeout(() => get().addLog('⚠️ [Cubo] Todos os 9 itens devem ser da mesma raridade.'), 10);
+          return {};
+        }
+
+        const totalLvl = slots.reduce((sum, s) => sum + s!.levelRequired, 0);
+        const avgLvl = Math.round(totalLvl / 9);
+
+        let nextRarity: ItemRarity = 'uncommon';
+        let levelBonus = 1;
+
+        if (targetRarity === 'common') nextRarity = 'uncommon';
+        else if (targetRarity === 'uncommon') nextRarity = 'rare';
+        else if (targetRarity === 'rare') nextRarity = 'epic';
+        else if (targetRarity === 'epic') nextRarity = 'legendary';
+        else if (targetRarity === 'legendary') {
+          nextRarity = 'legendary';
+          levelBonus = 3;
+        }
+
+        const newItem = generateRandomItem(avgLvl + levelBonus);
+        newItem.rarity = nextRarity;
+        
+        const rarityVal = { common: 1, uncommon: 1.5, rare: 2.2, epic: 3.5, legendary: 6 };
+        const mult = rarityVal[nextRarity];
+        const baseStatVal = Math.round(newItem.levelRequired * (2.2 + Math.random() * 0.4) * mult);
+        
+        if (newItem.type === 'weapon') {
+          newItem.attack = baseStatVal;
+          newItem.defense = 0;
+          newItem.hp = 0;
+        } else if (newItem.type === 'armor') {
+          newItem.defense = Math.round(baseStatVal * 0.4);
+          newItem.hp = Math.round(baseStatVal * 5);
+          newItem.attack = 0;
+        } else {
+          newItem.attack = Math.round(baseStatVal * 0.4);
+          newItem.hp = Math.round(baseStatVal * 4);
+          newItem.defense = Math.round(baseStatVal * 0.1);
+        }
+
+        setTimeout(() => get().addLog(`✨ [SÍNTESE] Criou: ${newItem.name} (${nextRarity})!`), 10);
+
+        return {
+          cubeSlots: Array(9).fill(null),
+          inventory: [...state.inventory, newItem]
+        };
+      })
     }),
     {
       name: 'rpgidle-save-state', // localStorage item key
@@ -844,6 +985,7 @@ export const useGameStore = create<GameState & GameActions>()(
         party: state.party,
         inventory: state.inventory,
         runeStash: state.runeStash,
+        cubeSlots: state.cubeSlots,
         layoutMode: state.layoutMode,
         combatLog: state.combatLog
       })
