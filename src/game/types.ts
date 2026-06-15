@@ -1,4 +1,4 @@
-export type CharacterClass = 'Warrior' | 'Mage' | 'Rogue';
+export type CharacterClass = 'Warrior' | 'Mage' | 'Rogue' | 'Cleric' | 'Paladin' | 'Necromancer';
 
 export type ItemType = 'weapon' | 'armor' | 'ring';
 export type ItemRarity = 'common' | 'uncommon' | 'rare' | 'epic' | 'legendary';
@@ -13,6 +13,7 @@ export interface Item {
   hp: number;
   refineLevel: number; // e.g. +0, +1, +2
   levelRequired: number;
+  classRequirement?: CharacterClass | null;
 }
 
 export type RuneStatType = 'attack' | 'defense' | 'hp' | 'goldGain' | 'xpGain';
@@ -43,7 +44,7 @@ export interface Character {
   xpNeeded: number;
   skillPoints: number;
   // Map of skillId to skill level (allocated points)
-  skills: { [skillId: string]: number };
+  skills: Record<string, number>;
   equipment: {
     weapon: Item | null;
     armor: Item | null;
@@ -65,6 +66,8 @@ export interface GameState {
   enchantStones: number;
   progression: Progression;
   party: Character[]; // Max 3 characters
+  tavern: Character[]; // Inactive characters
+  unlockedStashTabs: number; // Number of unlocked inventory tabs (each is 50 slots)
   inventory: Item[];  // Equipment stash
   runeStash: Rune[];  // Unequipped runes
   cubeSlots: (Item | null)[]; // 3x3 grid items

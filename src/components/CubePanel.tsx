@@ -14,7 +14,7 @@ export const CubePanel: React.FC = () => {
   const firstItem = cubeSlots.find(s => s !== null);
   const isAllSameRarity = cubeSlots
     .filter(s => s !== null)
-    .every(s => s!.rarity === firstItem?.rarity);
+    .every(s => s.rarity === firstItem?.rarity);
 
   const canSynthesize = filledCount === 9 && isAllSameRarity;
 
@@ -45,7 +45,7 @@ export const CubePanel: React.FC = () => {
             <div
               key={index}
               className={`cube-slot-box ${item ? `rarity-${item.rarity}` : ''}`}
-              onClick={() => item && removeFromCube(index)}
+              onClick={() => { if (item) removeFromCube(index); }}
               title={item ? `${item.name}. Clique para remover.` : 'Slot Vazio'}
             >
               {item ? (

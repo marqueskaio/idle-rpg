@@ -5,8 +5,13 @@ export const StageProgress: React.FC = () => {
   const progression = useGameStore(s => s.progression);
   const layoutMode = useGameStore(s => s.layoutMode);
 
-  const difficultyNames = ['Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo'];
-  const diffName = difficultyNames[progression.difficulty - 1] || `Diff ${progression.difficulty}`;
+  const difficultyNames = [
+    'Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo', 
+    'Purgatório', 'Eternidade', 'Caos', 'Vazio', 'Apocalipse', 
+    'Divino', 'Demiurgo', 'Estelar', 'Ancestral', 'Singularidade', 
+    'Infinito'
+  ];
+  const diffName = difficultyNames[progression.difficulty - 1] ?? `Diff ${progression.difficulty.toString()}`;
 
   const killPercentage = Math.min(100, (progression.killsInCurrentStage / progression.killsRequiredForNextStage) * 100);
 
@@ -30,7 +35,7 @@ export const StageProgress: React.FC = () => {
           <div className="progress-track">
             <div 
               className="progress-fill kills" 
-              style={{ width: `${killPercentage}%` }}
+              style={{ width: `${killPercentage.toString()}%` }}
             />
           </div>
         </div>
@@ -58,7 +63,7 @@ export const StageProgress: React.FC = () => {
         <div className="progress-track" style={{ height: '12px' }}>
           <div 
             className="progress-fill kills" 
-            style={{ width: `${killPercentage}%` }}
+            style={{ width: `${killPercentage.toString()}%` }}
           />
         </div>
       </div>

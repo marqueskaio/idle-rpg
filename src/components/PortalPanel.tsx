@@ -17,10 +17,10 @@ const stageCoordinates = [
 ];
 
 // SVG path connecting all stages
-const linePathD = stageCoordinates.map((node, i) => `${i === 0 ? 'M' : 'L'} ${node.x} ${node.y}`).join(' ');
+const linePathD = stageCoordinates.map((node, i) => `${i === 0 ? 'M' : 'L'} ${node.x.toString()} ${node.y.toString()}`).join(' ');
 
 // Landscape decorations per Act to enrich the visuals
-const actDecorations: { [act: number]: { emoji: string; x: number; y: number }[] } = {
+const actDecorations: Record<number, { emoji: string; x: number; y: number }[]> = {
   1: [
     { emoji: '🌲', x: 12, y: 82 },
     { emoji: '🌲', x: 80, y: 75 },
@@ -56,7 +56,12 @@ export const PortalPanel: React.FC = () => {
   const maxDifficulty = progression.difficulty;
   const currentDiff = progression.difficulty;
 
-  const difficultyNames = ['Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo'];
+  const difficultyNames = [
+    'Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo', 
+    'Purgatório', 'Eternidade', 'Caos', 'Vazio', 'Apocalipse', 
+    'Divino', 'Demiurgo', 'Estelar', 'Ancestral', 'Singularidade', 
+    'Infinito'
+  ];
 
   const handleDifficultyChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
     const newDiff = parseInt(e.target.value, 10);
@@ -119,7 +124,7 @@ export const PortalPanel: React.FC = () => {
           killsInCurrentStage: 0
         }
       }));
-      useGameStore.getState().addLog(`🔮 [Teleporte] Grupo viajou para o Estágio [Ato ${selectedAct} - Fase ${stageNum}]!`);
+      useGameStore.getState().addLog(`🔮 [Teleporte] Grupo viajou para o Estágio [Ato ${selectedAct.toString()} - Fase ${stageNum.toString()}]!`);
     }
   };
 
@@ -142,7 +147,7 @@ export const PortalPanel: React.FC = () => {
         >
           {Array.from({ length: maxDifficulty }).map((_, i) => (
             <option key={i} value={i + 1}>
-              💀 {difficultyNames[i] || `Dificuldade ${i + 1}`}
+              💀 {difficultyNames[i] || `Dificuldade ${(i + 1).toString()}`}
             </option>
           ))}
         </select>
@@ -159,7 +164,7 @@ export const PortalPanel: React.FC = () => {
             <button
               key={actNum}
               className={`btn-secondary ${isActive ? 'active' : ''}`}
-              onClick={() => isActUnlocked && selectAct(actNum)}
+              onClick={() => { if (isActUnlocked) selectAct(actNum); }}
               disabled={!isActUnlocked}
               style={{
                 flex: 1,
@@ -179,16 +184,16 @@ export const PortalPanel: React.FC = () => {
       </div>
 
       {/* Map Canvas Visual Wrapper */}
-      <div className={`rpg-map-canvas map-act-${selectedAct}`}>
+      <div className={`rpg-map-canvas map-act-${selectedAct.toString()}`}>
         
         {/* Landscape Decorations */}
-        {(actDecorations[selectedAct] || []).map((dec, idx) => (
+        {actDecorations[selectedAct as 1 | 2 | 3].map((dec, idx) => (
           <span
             key={idx}
             style={{
               position: 'absolute',
-              left: `${dec.x}%`,
-              top: `${dec.y}%`,
+              left: `${dec.x.toString()}%`,
+              top: `${dec.y.toString()}%`,
               transform: 'translate(-50%, -50%)',
               fontSize: '18px',
               opacity: 0.4,
@@ -246,10 +251,10 @@ export const PortalPanel: React.FC = () => {
             <div
               key={node.stage}
               className={nodeClass}
-              onClick={() => !isLocked && selectStage(node.stage)}
+              onClick={() => { if (!isLocked) selectStage(node.stage); }}
               style={{
-                left: `${node.x}%`,
-                top: `${node.y}%`,
+                left: `${node.x.toString()}%`,
+                top: `${node.y.toString()}%`,
                 transform: 'translate(-50%, -50%)'
               }}
               title={

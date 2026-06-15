@@ -7,13 +7,14 @@ import { CubePanel } from './components/CubePanel';
 import { StageProgress } from './components/StageProgress';
 import { PartyPanel } from './components/PartyPanel';
 import { CharacterModal } from './components/CharacterModal';
-import type { Item, CharacterClass } from './game/types';
+import type { Item, CharacterClass, Character } from './game/types';
 import { ItemIcon, RuneIcon, ClassIcon, CoinIcon, StoneIcon, PowerIcon } from './game/icons';
 
 export const App: React.FC = () => {
   // Seletores granulares: cada componente assina só o que usa, evitando o
   // re-render global a cada tick. Ações são refs estáveis (não disparam render).
   const party = useGameStore(s => s.party);
+  const tavern = useGameStore(s => s.tavern);
   const inventory = useGameStore(s => s.inventory);
   const runeStash = useGameStore(s => s.runeStash);
   const combatLog = useGameStore(s => s.combatLog);
@@ -21,6 +22,9 @@ export const App: React.FC = () => {
   const enchantStones = useGameStore(s => s.enchantStones);
   const layoutMode = useGameStore(s => s.layoutMode);
   const globalCombatPower = useGameStore(s => s.globalCombatPower);
+  const unlockedStashTabs = useGameStore(s => s.unlockedStashTabs);
+  const progression = useGameStore(s => s.progression);
+
   const craftItem = useGameStore(s => s.craftItem);
   const sellItem = useGameStore(s => s.sellItem);
   const dismantleItem = useGameStore(s => s.dismantleItem);
@@ -35,6 +39,10 @@ export const App: React.FC = () => {
   const allocateSkillPoint = useGameStore(s => s.allocateSkillPoint);
   const addToCube = useGameStore(s => s.addToCube);
   const toggleLayoutMode = useGameStore(s => s.toggleLayoutMode);
+  const buyStashTab = useGameStore(s => s.buyStashTab);
+  const addToParty = useGameStore(s => s.addToParty);
+  const removeFromParty = useGameStore(s => s.removeFromParty);
+  const fireCharacter = useGameStore(s => s.fireCharacter);
 
   const [activeRightTab, setActiveRightTab] = useState<'portal' | 'cube'>('portal');
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
@@ -42,6 +50,7 @@ export const App: React.FC = () => {
   const [activeGearSlotSelect, setActiveGearSlotSelect] = useState<'weapon' | 'armor' | 'ring' | null>(null);
   const [activeRuneSlotSelect, setActiveRuneSlotSelect] = useState<number | null>(null);
   const [managedCharId, setManagedCharId] = useState<string | null>(null);
+  const [activeStashTab, setActiveStashTab] = useState<number>(1);
   
   // Hiring Form Local State
   const [isHiring, setIsHiring] = useState(false);
@@ -56,28 +65,52 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Find active selected hero (falls back to first hero in party if selected is invalid)
-  const activeHero = party.find(c => c.id === selectedHeroId) || party[0] || null;
+  // Find active selected hero (falls back to first hero in party or tavern if selected is invalid)
+  const activeHero = party.find(c => c.id === selectedHeroId) ?? tavern.find(c => c.id === selectedHeroId) ?? (party as (Character | undefined)[])[0] ?? (tavern as (Character | undefined)[])[0] ?? null;
   const activeHeroStats = activeHero ? calculateCharacterStats(activeHero) : null;
   // Item equipado no slot atualmente aberto (para mostrar status ao clicar no equipamento)
   const equippedInSlot = activeGearSlotSelect && activeHero ? activeHero.equipment[activeGearSlotSelect] : null;
 
-  // Stash grid: cresce com o inventário (rolável). Mostra TODOS os itens
-  // + algumas vagas livres, arredondado para linhas completas de 10.
-  const STASH_COLS = 10;
-  const MIN_STASH_SLOTS = 50;
-  const totalStashSlots = Math.max(
-    MIN_STASH_SLOTS,
-    Math.ceil((inventory.length + 5) / STASH_COLS) * STASH_COLS
-  );
-  const stashSlots: (Item | null)[] = Array(totalStashSlots).fill(null);
-  inventory.forEach((item, index) => {
-    stashSlots[index] = item;
-  });
+  // Stash grid has exactly 50 slots per tab. Active tab displays inventory[startIndex ... startIndex + 49]
+  const stashSlots: (Item | null)[] = Array<Item | null>(50).fill(null);
+  const stashStartIndex = (activeStashTab - 1) * 50;
+  for (let i = 0; i < 50; i++) {
+    const itemIdx = stashStartIndex + i;
+    if (itemIdx < inventory.length) {
+      stashSlots[i] = inventory[itemIdx];
+    }
+  }
 
-  const selectedStashItem = inventory.find(i => i.id === selectedStashItemId) || null;
+  let selectedStashItem = inventory.find(i => i.id === selectedStashItemId) ?? null;
+  if (!selectedStashItem && selectedStashItemId) {
+    for (const c of party) {
+      const item = c.equipment.weapon?.id === selectedStashItemId ? c.equipment.weapon :
+                   c.equipment.armor?.id === selectedStashItemId ? c.equipment.armor :
+                   c.equipment.ring?.id === selectedStashItemId ? c.equipment.ring : null;
+      if (item) {
+        selectedStashItem = item;
+        break;
+      }
+    }
+  }
+  if (!selectedStashItem && selectedStashItemId) {
+    for (const c of tavern) {
+      const item = c.equipment.weapon?.id === selectedStashItemId ? c.equipment.weapon :
+                   c.equipment.armor?.id === selectedStashItemId ? c.equipment.armor :
+                   c.equipment.ring?.id === selectedStashItemId ? c.equipment.ring : null;
+      if (item) {
+        selectedStashItem = item;
+        break;
+      }
+    }
+  }
 
-  const handleHireSubmit = (e: React.FormEvent) => {
+  const isEquipped = selectedStashItem ? (
+    party.some(c => c.equipment.weapon?.id === selectedStashItem.id || c.equipment.armor?.id === selectedStashItem.id || c.equipment.ring?.id === selectedStashItem.id) ||
+    tavern.some(c => c.equipment.weapon?.id === selectedStashItem.id || c.equipment.armor?.id === selectedStashItem.id || c.equipment.ring?.id === selectedStashItem.id)
+  ) : false;
+
+  const handleHireSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     hireCharacter(hireName, hireClass);
     setHireName('');
@@ -104,6 +137,16 @@ export const App: React.FC = () => {
     return `var(--rarity-${rarity}-text)`;
   };
 
+  const RARITY_RANK: Record<string, number> = {
+    common: 0, uncommon: 1, rare: 2, epic: 3, legendary: 4, mythic: 5,
+  };
+  const sortByBest = (a: Item, b: Item) => {
+    const ra = RARITY_RANK[a.rarity] ?? 0;
+    const rb = RARITY_RANK[b.rarity] ?? 0;
+    if (rb !== ra) return rb - ra;
+    return b.refineLevel - a.refineLevel;
+  };
+
   // Enchantment costs
   const getEnchantCosts = (item: Item) => {
     const stoneCost = 1 + Math.floor(item.refineLevel / 3);
@@ -114,7 +157,7 @@ export const App: React.FC = () => {
 
   if (layoutMode === 'taskbar') {
     return (
-      <div className="taskbar-stage">
+      <div className={`taskbar-stage compact-bg-act-${progression.act.toString()}`}>
       <div className="taskbar-layout">
         {/* Alternador de Layout */}
         <div className="taskbar-section" style={{ borderRight: '1px solid var(--color-border)', paddingRight: '12px' }}>
@@ -133,7 +176,7 @@ export const App: React.FC = () => {
 
         {/* Controle da Party */}
         <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
-          <PartyPanel onManageChar={(char) => setManagedCharId(char.id)} />
+          <PartyPanel onManageChar={(char) => { setManagedCharId(char.id); }} />
         </div>
 
         {/* Status Globais Rápidos */}
@@ -145,7 +188,11 @@ export const App: React.FC = () => {
 
         {/* Modal de gerenciamento do herói */}
         {managedCharId && (
-          <CharacterModal charId={managedCharId} onClose={() => setManagedCharId(null)} />
+          <CharacterModal 
+            charId={managedCharId} 
+            onClose={() => { setManagedCharId(null); }} 
+            onSelectForgeItem={(itemId) => { setSelectedStashItemId(itemId); setManagedCharId(null); }}
+          />
         )}
       </div>
       </div>
@@ -167,16 +214,56 @@ export const App: React.FC = () => {
           <div className="column-header">STASH</div>
           
           <div className="column-body" style={{ gap: '6px' }}>
-            {/* Stash tabs headers */}
-            <div className="stash-tabs">
-              <button className="stash-tab-btn active">Baú 1</button>
-              <button className="stash-tab-btn" disabled>Baú 2</button>
-              <button className="stash-tab-btn" disabled>+</button>
+            {/* Stash Tabs Row */}
+            <div className="stash-tabs" style={{ display: 'flex', gap: '3px', flexWrap: 'wrap' }}>
+              {Array.from({ length: unlockedStashTabs }).map((_, i) => {
+                const tabNum = i + 1;
+                const isActive = activeStashTab === tabNum;
+                return (
+                  <button
+                    key={tabNum}
+                    className={`stash-tab-btn ${isActive ? 'active' : ''}`}
+                    onClick={() => {
+                      setActiveStashTab(tabNum);
+                      setSelectedStashItemId(null);
+                    }}
+                    style={{
+                      padding: '4px 8px',
+                      fontSize: '11px',
+                      cursor: 'pointer',
+                      border: '1px solid var(--color-border)',
+                      background: isActive ? 'var(--color-bg-panel-light)' : 'var(--color-bg-body)',
+                      color: isActive ? 'var(--color-gold)' : 'var(--color-text)'
+                    }}
+                  >
+                    Baú {tabNum.toString()}
+                  </button>
+                );
+              })}
+              {unlockedStashTabs < 5 && (
+                <button
+                  className="stash-tab-btn buy-tab-btn"
+                  onClick={buyStashTab}
+                  title={`Comprar Nova Aba por ${(Math.pow(5, unlockedStashTabs - 1) * 2000).toLocaleString()}g`}
+                  style={{
+                    padding: '4px 8px',
+                    fontSize: '11px',
+                    cursor: 'pointer',
+                    border: '1px dashed var(--color-gold)',
+                    background: 'transparent',
+                    color: 'var(--color-gold)'
+                  }}
+                >
+                  ➕ [{(Math.pow(5, unlockedStashTabs - 1) * 2000).toLocaleString()}g]
+                </button>
+              )}
             </div>
 
             {/* Toolbar: contador + organizar + venda em lote */}
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '12px' }}>
-              <span style={{ color: 'var(--color-text-dim)' }}>Itens: <strong style={{ color: 'var(--color-text)' }}>{inventory.length}</strong></span>
+              <span style={{ color: 'var(--color-text-dim)' }}>
+                Espaço: <strong style={{ color: 'var(--color-text)' }}>{inventory.length.toString()}/{(unlockedStashTabs * 50).toString()}</strong>
+              </span>
               <div style={{ display: 'flex', gap: '4px' }}>
                 <button
                   className="btn-secondary"
@@ -203,14 +290,14 @@ export const App: React.FC = () => {
             <div className="stash-grid">
               {stashSlots.map((item, idx) => (
                 <div
-                  key={idx}
+                  key={item ? item.id : `empty-${idx.toString()}`}
                   className={`stash-slot ${item ? `rarity-${item.rarity}` : ''} ${selectedStashItemId === item?.id ? 'active' : ''}`}
-                  onClick={() => handleStashSlotClick(item)}
+                  onClick={() => { handleStashSlotClick(item); }}
                 >
                   {item ? (
                     <>
                       <ItemIcon item={item} className="slot-icon" size={22} />
-                      <span className="slot-refine">+{item.refineLevel}</span>
+                      <span className="slot-refine">+{item.refineLevel.toString()}</span>
                     </>
                   ) : (
                     <span style={{ opacity: 0.05, fontSize: '18px' }}>·</span>
@@ -240,9 +327,9 @@ export const App: React.FC = () => {
               <div className="rpg-panel" style={{ backgroundColor: '#131211', display: 'flex', flexDirection: 'column', gap: '4px', fontSize: '15px' }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                   <strong style={{ color: getRarityColor(selectedStashItem.rarity), fontSize: '17px' }}>
-                    {selectedStashItem.name} +{selectedStashItem.refineLevel}
+                    {selectedStashItem.name} +{selectedStashItem.refineLevel.toString()}
                   </strong>
-                  <button className="rpg-close-x" onClick={() => setSelectedStashItemId(null)}>X</button>
+                  <button className="rpg-close-x" onClick={() => { setSelectedStashItemId(null); }}>X</button>
                 </div>
                 
                 <div style={{ display: 'flex', gap: '10px', color: 'var(--color-text-dim)', fontSize: '14px' }}>
@@ -251,38 +338,48 @@ export const App: React.FC = () => {
                   {selectedStashItem.hp > 0 && <span>❤️HP: <strong style={{ color: 'white' }}>{Math.round(selectedStashItem.hp * (1 + selectedStashItem.refineLevel * 0.15))}</strong></span>}
                 </div>
 
-                {(() => {
-                  const { stoneCost, goldCost, successRate } = getEnchantCosts(selectedStashItem);
-                  return (
-                    <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', padding: '2px 0' }}>
-                      Melhorar: 🪙{goldCost} + 💎{stoneCost} Pedras | Chance: {successRate}%
-                    </div>
-                  );
-                })()}
+                {selectedStashItem.classRequirement && (
+                  <div style={{ fontSize: '13px', color: 'var(--color-gold)', marginTop: '2px' }}>
+                    Classe Requerida: 👤<strong>{selectedStashItem.classRequirement === 'Warrior' ? 'Guerreiro' : selectedStashItem.classRequirement === 'Mage' ? 'Mago' : selectedStashItem.classRequirement === 'Rogue' ? 'Ladino' : selectedStashItem.classRequirement === 'Cleric' ? 'Clérigo' : selectedStashItem.classRequirement === 'Paladin' ? 'Paladino' : 'Necromante'}</strong>
+                  </div>
+                )}
+                {isEquipped && (
+                  <div style={{ fontSize: '13px', color: 'var(--color-success)', marginTop: '2px' }}>
+                    🛡️ Equipado no Personagem
+                  </div>
+                )}
+
+                <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', padding: '2px 0' }}>
+                  Melhorar: 🪙{getEnchantCosts(selectedStashItem).goldCost.toString()} + 💎{getEnchantCosts(selectedStashItem).stoneCost.toString()} Pedras | Chance: {getEnchantCosts(selectedStashItem).successRate.toString()}%
+                </div>
 
                 <div style={{ display: 'flex', gap: '4px', marginTop: '2px' }}>
                   <button
                     className="btn-rpg"
-                    onClick={() => enchantItem(selectedStashItem.id)}
+                    onClick={() => { enchantItem(selectedStashItem.id); }}
                     disabled={gold < getEnchantCosts(selectedStashItem).goldCost || enchantStones < getEnchantCosts(selectedStashItem).stoneCost}
                     style={{ flex: 2, fontSize: '14px', padding: '2px 0' }}
                   >
                     🔮 Melhorar
                   </button>
-                  <button
-                    className="btn-rpg"
-                    onClick={() => { sellItem(selectedStashItem.id); setSelectedStashItemId(null); }}
-                    style={{ flex: 1, fontSize: '14px', padding: '2px 0' }}
-                  >
-                    🪙 Vender
-                  </button>
-                  <button
-                    className="btn-rpg"
-                    onClick={() => { dismantleItem(selectedStashItem.id); setSelectedStashItemId(null); }}
-                    style={{ flex: 1, fontSize: '14px', padding: '2px 0', color: 'var(--color-danger)', borderColor: '#7f1d1d' }}
-                  >
-                    🔨 Desman.
-                  </button>
+                  {!isEquipped && (
+                    <>
+                      <button
+                        className="btn-rpg"
+                        onClick={() => { sellItem(selectedStashItem.id); setSelectedStashItemId(null); }}
+                        style={{ flex: 1, fontSize: '14px', padding: '2px 0' }}
+                      >
+                        🪙 Vender
+                      </button>
+                      <button
+                        className="btn-rpg"
+                        onClick={() => { dismantleItem(selectedStashItem.id); setSelectedStashItemId(null); }}
+                        style={{ flex: 1, fontSize: '14px', padding: '2px 0', color: 'var(--color-danger)', borderColor: '#7f1d1d' }}
+                      >
+                        🔨 Desman.
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             ) : (
@@ -302,9 +399,9 @@ export const App: React.FC = () => {
           <div className="column-body">
             {/* Active Group Selector */}
             <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
-              <span className="rpg-font" style={{ fontSize: '16px', color: 'var(--color-text-dim)' }}>Grupo ({party.length}/3)</span>
-              {party.length < 3 && !isHiring && (
-                <button className="btn-rpg" onClick={() => setIsHiring(true)} style={{ padding: '1px 8px', fontSize: '14px' }}>
+              <span className="rpg-font" style={{ fontSize: '16px', color: 'var(--color-text-dim)' }}>Grupo Ativo ({party.length.toString()}/3)</span>
+              {party.length + tavern.length < 12 && !isHiring && (
+                <button className="btn-rpg" onClick={() => { setIsHiring(true); }} style={{ padding: '1px 8px', fontSize: '14px' }}>
                   ➕ Recrutar
                 </button>
               )}
@@ -317,20 +414,23 @@ export const App: React.FC = () => {
                   <input
                     type="text"
                     value={hireName}
-                    onChange={e => setHireName(e.target.value)}
+                    onChange={e => { setHireName(e.target.value); }}
                     placeholder="Nome..."
                     maxLength={10}
                     style={{ flex: 1 }}
                     required
                   />
-                  <select value={hireClass} onChange={e => setHireClass(e.target.value as CharacterClass)} title="Escolher classe do herói">
+                  <select value={hireClass} onChange={e => { setHireClass(e.target.value as CharacterClass); }} title="Escolher classe do herói">
                     <option value="Warrior">🛡️ Guerreiro</option>
                     <option value="Mage">🔮 Mago</option>
                     <option value="Rogue">🗡️ Ladino</option>
+                    <option value="Cleric">🩹 Clérigo</option>
+                    <option value="Paladin">🛡️⚔️ Paladino</option>
+                    <option value="Necromancer">💀 Necromante</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: '6px', justifyContent: 'flex-end' }}>
-                  <button type="button" className="btn-rpg" onClick={() => setIsHiring(false)} style={{ fontSize: '13px', padding: '1px 6px' }}>Mudar</button>
+                  <button type="button" className="btn-rpg" onClick={() => { setIsHiring(false); }} style={{ fontSize: '13px', padding: '1px 6px' }}>Mudar</button>
                   <button type="submit" className="btn-rpg" style={{ fontSize: '13px', padding: '1px 6px', color: 'var(--color-gold)' }}>Contratar</button>
                 </div>
               </form>
@@ -345,7 +445,7 @@ export const App: React.FC = () => {
                   onClick={() => { setSelectedHeroId(char.id); setActiveGearSlotSelect(null); setActiveRuneSlotSelect(null); }}
                   style={{ flex: 1, padding: '3px', fontSize: '15px', textTransform: 'none' }}
                 >
-                  <ClassIcon cls={char.class} size={14} /> {char.name} (Nv.{char.level})
+                  <ClassIcon cls={char.class} size={14} /> {char.name} (Nv.{char.level.toString()})
                 </button>
               ))}
               {party.length === 0 && (
@@ -355,26 +455,92 @@ export const App: React.FC = () => {
               )}
             </div>
 
-            {activeHero && activeHeroStats && (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
+            {/* Tavern reserve list */}
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', borderTop: '1px solid var(--color-border)', paddingTop: '6px', marginTop: '4px' }}>
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                <span className="rpg-font" style={{ fontSize: '14px', color: 'var(--color-text-dim)' }}>
+                  Taberna (Reserva: {tavern.length.toString()}/{(12 - party.length).toString()})
+                </span>
+              </div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px' }}>
+                {tavern.map(char => (
+                  <button
+                    key={char.id}
+                    className={`btn-secondary tavern-char-btn ${selectedHeroId === char.id ? 'active' : ''}`}
+                    onClick={() => { setSelectedHeroId(char.id); setActiveGearSlotSelect(null); setActiveRuneSlotSelect(null); }}
+                    style={{ padding: '3px 8px', fontSize: '12px', textTransform: 'none' }}
+                  >
+                    💤 <ClassIcon cls={char.class} size={11} /> {char.name} (Nv.{char.level.toString()})
+                  </button>
+                ))}
+                {tavern.length === 0 && (
+                  <div style={{ fontSize: '11px', color: 'var(--color-text-dark)', fontStyle: 'italic', padding: '2px' }}>
+                    Nenhum herói na reserva. Contrate mais heróis (máximo 12 no total).
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {activeHero && (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', marginTop: '8px' }}>
                 
                 {/* Hero status bar (level, XP) */}
                 <div className="progress-container">
-                  <div className="progress-header" style={{ fontSize: '13px' }}>
-                    <span>XP herói (Nv.{activeHero.level})</span>
-                    <span>{activeHero.xp} / {activeHero.xpNeeded}</span>
+                  <div className="progress-header" style={{ fontSize: '13px', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                    <span>
+                      <ClassIcon cls={activeHero.class} size={13} /> <strong>{activeHero.name}</strong> (Nv.{activeHero.level.toString()})
+                    </span>
+                    <div style={{ display: 'flex', gap: '4px' }}>
+                      {party.some(c => c.id === activeHero.id) ? (
+                        <button
+                          className="btn-secondary"
+                          onClick={() => { removeFromParty(activeHero.id); }}
+                          disabled={party.length <= 1}
+                          title={party.length <= 1 ? "Você precisa manter pelo menos 1 herói ativo!" : "Enviar para a taverna"}
+                          style={{ fontSize: '10px', padding: '1px 6px' }}
+                        >
+                          💤 Reserva
+                        </button>
+                      ) : (
+                        <button
+                          className="btn-secondary"
+                          onClick={() => { addToParty(activeHero.id); }}
+                          disabled={party.length >= 3}
+                          title={party.length >= 3 ? "Grupo ativo está cheio (máx 3)!" : "Promover ao grupo ativo"}
+                          style={{ fontSize: '10px', padding: '1px 6px', color: 'var(--color-gold)' }}
+                        >
+                          🛡️ Promover
+                        </button>
+                      )}
+                      <button
+                        className="btn-danger"
+                        onClick={() => {
+                          if (window.confirm(`Tem certeza de que deseja demitir ${activeHero.name}? Todos os equipamentos e runas serão devolvidos ao baú.`)) {
+                            fireCharacter(activeHero.id);
+                            setSelectedHeroId(null);
+                          }
+                        }}
+                        style={{ fontSize: '10px', padding: '1px 6px', borderColor: '#7f1d1d' }}
+                      >
+                        🔥 Dispensar
+                      </button>
+                    </div>
+                  </div>
+                  <div className="progress-header" style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>
+                    <span>XP</span>
+                    <span>{activeHero.xp.toString()} / {activeHero.xpNeeded.toString()}</span>
                   </div>
                   <div className="rpg-bar-track">
-                    <div className="rpg-bar-fill xp" style={{ width: `${Math.min(100, (activeHero.xp / activeHero.xpNeeded) * 100)}%` }} />
+                    <div className="rpg-bar-fill xp" style={{ width: `${Math.min(100, (activeHero.xp / activeHero.xpNeeded) * 100).toString()}%` }} />
                   </div>
                 </div>
 
                 {/* Stats Panel */}
                 <div className="rpg-panel" style={{ display: 'grid', gridTemplateColumns: 'repeat(2, 1fr)', gap: '4px', fontSize: '14px', padding: '6px' }}>
-                  <div>⭐ Poder: <strong className="rpg-gold-text">{activeHeroStats.power}</strong></div>
-                  <div>⚔️ Ataque: <strong>{activeHeroStats.attack}</strong></div>
-                  <div>🛡️ Defesa: <strong>{activeHeroStats.defense}</strong></div>
-                  <div>❤️ HP: <strong>{activeHeroStats.hp}</strong></div>
+                  <div>⭐ Poder: <strong className="rpg-gold-text">{activeHeroStats ? activeHeroStats.power.toString() : '0'}</strong></div>
+                  <div>⚔️ Ataque: <strong>{activeHeroStats ? activeHeroStats.attack.toString() : '0'}</strong></div>
+                  <div>🛡️ Defesa: <strong>{activeHeroStats ? activeHeroStats.defense.toString() : '0'}</strong></div>
+                  <div>❤️ HP: <strong>{activeHeroStats ? activeHeroStats.hp.toString() : '0'}</strong></div>
                 </div>
 
                 {/* Equipment Paper-Doll */}
@@ -395,7 +561,10 @@ export const App: React.FC = () => {
                       ) : '➕'}
                     </div>
                     {activeHero.equipment.weapon && (
-                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'weapon')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                      <div style={{ display: 'flex', gap: '2px', width: '100%', padding: '0 2px' }}>
+                        <button className="btn-danger" onClick={() => { unequipItem(activeHero.id, 'weapon'); }} style={{ fontSize: '10px', padding: '1px 3px', flex: 1 }}>Remover</button>
+                        <button className="btn-primary" onClick={() => { setSelectedStashItemId(activeHero.equipment.weapon!.id); }} style={{ fontSize: '10px', padding: '1px 3px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)' }} title="Melhorar na Forja">🔮</button>
+                      </div>
                     )}
                   </div>
 
@@ -414,7 +583,10 @@ export const App: React.FC = () => {
                       ) : '➕'}
                     </div>
                     {activeHero.equipment.armor && (
-                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'armor')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                      <div style={{ display: 'flex', gap: '2px', width: '100%', padding: '0 2px' }}>
+                        <button className="btn-danger" onClick={() => { unequipItem(activeHero.id, 'armor'); }} style={{ fontSize: '10px', padding: '1px 3px', flex: 1 }}>Remover</button>
+                        <button className="btn-primary" onClick={() => { setSelectedStashItemId(activeHero.equipment.armor!.id); }} style={{ fontSize: '10px', padding: '1px 3px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)' }} title="Melhorar na Forja">🔮</button>
+                      </div>
                     )}
                   </div>
 
@@ -433,7 +605,10 @@ export const App: React.FC = () => {
                       ) : '➕'}
                     </div>
                     {activeHero.equipment.ring && (
-                      <button className="btn-danger" onClick={() => unequipItem(activeHero.id, 'ring')} style={{ fontSize: '12px', padding: '1px 3px' }}>Remover</button>
+                      <div style={{ display: 'flex', gap: '2px', width: '100%', padding: '0 2px' }}>
+                        <button className="btn-danger" onClick={() => { unequipItem(activeHero.id, 'ring'); }} style={{ fontSize: '10px', padding: '1px 3px', flex: 1 }}>Remover</button>
+                        <button className="btn-primary" onClick={() => { setSelectedStashItemId(activeHero.equipment.ring!.id); }} style={{ fontSize: '10px', padding: '1px 3px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)' }} title="Melhorar na Forja">🔮</button>
+                      </div>
                     )}
                   </div>
 
@@ -444,7 +619,7 @@ export const App: React.FC = () => {
                   <div className="rpg-panel" style={{ padding: '6px', backgroundColor: '#141312', border: '1px solid var(--color-border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Selecionar {activeGearSlotSelect === 'weapon' ? 'Arma' : activeGearSlotSelect === 'armor' ? 'Armadura' : 'Anel'}</span>
-                      <button className="rpg-close-x" onClick={() => setActiveGearSlotSelect(null)}>X</button>
+                      <button className="rpg-close-x" onClick={() => { setActiveGearSlotSelect(null); }}>X</button>
                     </div>
 
                     {/* Status do item atualmente equipado neste slot */}
@@ -460,7 +635,7 @@ export const App: React.FC = () => {
                               {equippedInSlot.hp > 0 && <span>❤️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.hp * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
                             </span>
                           </div>
-                          <button className="btn-danger" onClick={() => unequipItem(activeHero.id, equippedInSlot.type)} style={{ fontSize: '11px', padding: '1px 6px' }}>Remover</button>
+                          <button className="btn-danger" onClick={() => { unequipItem(activeHero.id, equippedInSlot.type); }} style={{ fontSize: '11px', padding: '1px 6px' }}>Remover</button>
                         </div>
                       ) : (
                         <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>Nenhum item equipado.</span>
@@ -469,19 +644,22 @@ export const App: React.FC = () => {
 
                     <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', marginBottom: '3px' }}>Trocar por:</div>
                     <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
-                      {inventory.filter(i => i.type === activeGearSlotSelect).length === 0 ? (
+                      {inventory.filter(i => i.type === activeGearSlotSelect && (!i.classRequirement || i.classRequirement === activeHero.class)).length === 0 ? (
                         <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', textAlign: 'center', padding: '4px' }}>Nenhum item compatível no baú.</div>
                       ) : (
                         inventory
-                          .filter(i => i.type === activeGearSlotSelect)
+                          .filter(i => i.type === activeGearSlotSelect && (!i.classRequirement || i.classRequirement === activeHero.class))
+                          .sort(sortByBest)
                           .map(item => (
                             <div
                               key={item.id}
                               className="equip-row"
                               onClick={() => { equipItem(activeHero.id, item.id); setActiveGearSlotSelect(null); }}
                             >
-                              <span style={{ color: getRarityColor(item.rarity) }}>{item.name} +{item.refineLevel}</span>
-                              <span style={{ color: activeHero.level >= item.levelRequired ? 'var(--color-success)' : 'var(--color-danger)' }}>Req: Nv.{item.levelRequired}</span>
+                              <span style={{ color: getRarityColor(item.rarity) }}>{item.name} +{item.refineLevel.toString()}</span>
+                              <span style={{ color: activeHero.level >= item.levelRequired ? 'var(--color-success)' : 'var(--color-danger)' }}>
+                                Req: Nv.{item.levelRequired.toString()}{item.classRequirement ? ` (${item.classRequirement === 'Warrior' ? 'Guerreiro' : item.classRequirement === 'Mage' ? 'Mago' : item.classRequirement === 'Rogue' ? 'Ladino' : item.classRequirement === 'Cleric' ? 'Clérigo' : item.classRequirement === 'Paladin' ? 'Paladino' : 'Necromante'})` : ''}
+                              </span>
                             </div>
                           ))
                       )}
@@ -515,7 +693,7 @@ export const App: React.FC = () => {
                       </div>
                       <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>Runa {rIdx + 1}</span>
                       {rune && (
-                        <button className="btn-danger" onClick={() => unsocketRune(activeHero.id, rIdx)} style={{ fontSize: '10px', padding: '0 2px', marginTop: '2px' }}>Soltar</button>
+                        <button className="btn-danger" onClick={() => { unsocketRune(activeHero.id, rIdx); }} style={{ fontSize: '10px', padding: '0 2px', marginTop: '2px' }}>Soltar</button>
                       )}
                     </div>
                   ))}
@@ -526,7 +704,7 @@ export const App: React.FC = () => {
                   <div className="rpg-panel" style={{ padding: '6px', backgroundColor: '#141312', border: '1px solid var(--color-border)' }}>
                     <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
                       <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Encaixar Runa no Slot {activeRuneSlotSelect + 1}</span>
-                      <button className="rpg-close-x" onClick={() => setActiveRuneSlotSelect(null)}>X</button>
+                      <button className="rpg-close-x" onClick={() => { setActiveRuneSlotSelect(null); }}>X</button>
                     </div>
                     <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {runeStash.length === 0 ? (
@@ -540,7 +718,7 @@ export const App: React.FC = () => {
                           >
                             <span style={{ color: 'var(--class-mage)' }}>{rune.name}</span>
                             <span style={{ fontSize: '12px' }}>
-                              {rune.statType === 'attack' ? `Atk +${rune.value}` : rune.statType === 'defense' ? `Def +${rune.value}` : `HP +${rune.value}`}
+                              {rune.statType === 'attack' ? `Atk +${rune.value.toString()}` : rune.statType === 'defense' ? `Def +${rune.value.toString()}` : `HP +${rune.value.toString()}`}
                             </span>
                           </div>
                         ))
@@ -568,7 +746,7 @@ export const App: React.FC = () => {
                             <span style={{ fontSize: '12px', color: 'var(--color-gold)' }}>Nv.{curLvl}/{skill.maxLevel}</span>
                             <button
                               className="btn-rpg"
-                              onClick={() => allocateSkillPoint(activeHero.id, skill.id)}
+                              onClick={() => { allocateSkillPoint(activeHero.id, skill.id); }}
                               disabled={activeHero.skillPoints <= 0 || isMax}
                               style={{ padding: '0 6px', fontSize: '11px' }}
                             >
@@ -607,14 +785,14 @@ export const App: React.FC = () => {
           <div style={{ display: 'flex', borderBottom: '2px solid var(--color-border)' }}>
             <button
               className={`tab-btn ${activeRightTab === 'portal' ? 'active' : ''}`}
-              onClick={() => setActiveRightTab('portal')}
+              onClick={() => { setActiveRightTab('portal'); }}
               style={{ flex: 1, padding: '4px', fontSize: '20px', textTransform: 'uppercase' }}
             >
               🗺️ Portal Map
             </button>
             <button
               className={`tab-btn ${activeRightTab === 'cube' ? 'active' : ''}`}
-              onClick={() => setActiveRightTab('cube')}
+              onClick={() => { setActiveRightTab('cube'); }}
               style={{ flex: 1, padding: '4px', fontSize: '20px', textTransform: 'uppercase' }}
             >
               📦 Transmutador

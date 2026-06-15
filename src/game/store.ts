@@ -19,22 +19,46 @@ interface SkillDef {
 // Ids antigos (w_passive, w_active, ...) preservados para não invalidar saves.
 export const CLASS_SKILLS: Record<CharacterClass, SkillDef[]> = {
   Warrior: [
-    { id: 'w_passive', name: 'Fortitude', description: 'Aumenta HP máximo em 6% e Defesa em 6% por nível.', type: 'passive', maxLevel: 10, icon: '🛡️', effects: [{ kind: 'hpPct', value: 6 }, { kind: 'defPct', value: 6 }] },
-    { id: 'w_active', name: 'Golpe de Escudo', description: 'Investida marcial: +8% de Ataque por nível.', type: 'active', maxLevel: 10, icon: '⚔️', effects: [{ kind: 'atkPct', value: 8 }] },
-    { id: 'w_fury', name: 'Fúria de Batalha', description: 'Sede de sangue: +5% de Ataque por nível.', type: 'passive', maxLevel: 10, icon: '🔥', effects: [{ kind: 'atkPct', value: 5 }] },
-    { id: 'w_stone', name: 'Pele de Pedra', description: 'Endurecimento: +4 de Defesa e +3% de HP por nível.', type: 'passive', maxLevel: 10, icon: '🪨', effects: [{ kind: 'defFlat', value: 4 }, { kind: 'hpPct', value: 3 }] }
+    { id: 'w_passive', name: 'Fortitude', description: 'Aumenta HP máximo em 6% e Defesa em 6% por nível.', type: 'passive', maxLevel: 25, icon: '🛡️', effects: [{ kind: 'hpPct', value: 6 }, { kind: 'defPct', value: 6 }] },
+    { id: 'w_active', name: 'Golpe de Escudo', description: 'Investida marcial: +8% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '⚔️', effects: [{ kind: 'atkPct', value: 8 }] },
+    { id: 'w_fury', name: 'Fúria de Batalha', description: 'Sede de sangue: +5% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '🔥', effects: [{ kind: 'atkPct', value: 5 }] },
+    { id: 'w_stone', name: 'Pele de Pedra', description: 'Endurecimento: +4 de Defesa e +3% de HP por nível.', type: 'passive', maxLevel: 25, icon: '🪨', effects: [{ kind: 'defFlat', value: 4 }, { kind: 'hpPct', value: 3 }] },
+    { id: 'w_block', name: 'Bloqueio Ativo', description: 'Sua perícia com o escudo concede +8 de Defesa e +2 de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '🛡️', effects: [{ kind: 'defFlat', value: 8 }, { kind: 'atkFlat', value: 2 }] },
+    { id: 'w_colossus', name: 'Colosso', description: 'Aura titânica: +10% de HP máximo por nível.', type: 'passive', maxLevel: 25, icon: '🧱', effects: [{ kind: 'hpPct', value: 10 }] }
   ],
   Mage: [
-    { id: 'm_passive', name: 'Fluxo Arcano', description: 'Aumenta o Ataque em 10% por nível.', type: 'passive', maxLevel: 10, icon: '🌀', effects: [{ kind: 'atkPct', value: 10 }] },
-    { id: 'm_active', name: 'Bola de Fogo', description: 'Conjuração ofensiva: +12% de Ataque por nível.', type: 'active', maxLevel: 10, icon: '☄️', effects: [{ kind: 'atkPct', value: 12 }] },
-    { id: 'm_focus', name: 'Intelecto', description: 'Poder bruto: +3 de Ataque e +2% por nível.', type: 'passive', maxLevel: 10, icon: '📘', effects: [{ kind: 'atkFlat', value: 3 }, { kind: 'atkPct', value: 2 }] },
-    { id: 'm_ward', name: 'Escudo Arcano', description: 'Barreira mágica: +5% de HP e +4% de Defesa por nível.', type: 'passive', maxLevel: 10, icon: '🔵', effects: [{ kind: 'hpPct', value: 5 }, { kind: 'defPct', value: 4 }] }
+    { id: 'm_passive', name: 'Fluxo Arcano', description: 'Aumenta o Ataque em 10% por nível.', type: 'passive', maxLevel: 25, icon: '🌀', effects: [{ kind: 'atkPct', value: 10 }] },
+    { id: 'm_active', name: 'Bola de Fogo', description: 'Conjuração ofensiva: +12% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '☄️', effects: [{ kind: 'atkPct', value: 12 }] },
+    { id: 'm_focus', name: 'Intelecto', description: 'Poder bruto: +3 de Ataque e +2% por nível.', type: 'passive', maxLevel: 25, icon: '📘', effects: [{ kind: 'atkFlat', value: 3 }, { kind: 'atkPct', value: 2 }] },
+    { id: 'm_ward', name: 'Escudo Arcano', description: 'Barreira mágica: +5% de HP e +4% de Defesa por nível.', type: 'passive', maxLevel: 25, icon: '🔵', effects: [{ kind: 'hpPct', value: 5 }, { kind: 'defPct', value: 4 }] },
+    { id: 'm_overload', name: 'Sobrecarga Elemental', description: 'Magia em ignição: +12% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '⚡', effects: [{ kind: 'atkPct', value: 12 }] },
+    { id: 'm_haste', name: 'Celeridade', description: 'Manipulação temporal: +6% de Defesa e +6% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '⏳', effects: [{ kind: 'defPct', value: 6 }, { kind: 'atkPct', value: 6 }] }
   ],
   Rogue: [
-    { id: 'r_passive', name: 'Mestria em Adagas', description: 'Aumenta o Ataque em 7% por nível.', type: 'passive', maxLevel: 10, icon: '🗡️', effects: [{ kind: 'atkPct', value: 7 }] },
-    { id: 'r_active', name: 'Ataque Furtivo', description: 'Golpe nas sombras: +10% de Ataque por nível.', type: 'active', maxLevel: 10, icon: '🌑', effects: [{ kind: 'atkPct', value: 10 }] },
-    { id: 'r_crit', name: 'Letalidade', description: 'Golpes críticos: +6% de Ataque por nível.', type: 'passive', maxLevel: 10, icon: '🎯', effects: [{ kind: 'atkPct', value: 6 }] },
-    { id: 'r_evasion', name: 'Evasão', description: 'Reflexos felinos: +3% de Defesa e +3% de HP por nível.', type: 'passive', maxLevel: 10, icon: '💨', effects: [{ kind: 'defPct', value: 3 }, { kind: 'hpPct', value: 3 }] }
+    { id: 'r_passive', name: 'Mestria em Adagas', description: 'Aumenta o Ataque em 7% por nível.', type: 'passive', maxLevel: 25, icon: '🗡️', effects: [{ kind: 'atkPct', value: 7 }] },
+    { id: 'r_active', name: 'Ataque Furtivo', description: 'Golpe nas sombras: +10% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '🌑', effects: [{ kind: 'atkPct', value: 10 }] },
+    { id: 'r_crit', name: 'Letalidade', description: 'Golpes críticos: +6% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '🎯', effects: [{ kind: 'atkPct', value: 6 }] },
+    { id: 'r_evasion', name: 'Evasão', description: 'Reflexos felinos: +3% de Defesa e +3% de HP por nível.', type: 'passive', maxLevel: 25, icon: '💨', effects: [{ kind: 'defPct', value: 3 }, { kind: 'hpPct', value: 3 }] },
+    { id: 'r_shadowstep', name: 'Passo das Sombras', description: 'Movimentação rápida: +8% de Ataque e +4% de Defesa por nível.', type: 'passive', maxLevel: 25, icon: '👣', effects: [{ kind: 'atkPct', value: 8 }, { kind: 'defPct', value: 4 }] },
+    { id: 'r_assassinate', name: 'Assassinato', description: 'Execução silenciosa: +15 de Ataque por nível.', type: 'active', maxLevel: 25, icon: '🩸', effects: [{ kind: 'atkFlat', value: 15 }] }
+  ],
+  Cleric: [
+    { id: 'c_passive', name: 'Fé Divina', description: 'Aumenta HP máximo em 8% e Defesa em 4% por nível.', type: 'passive', maxLevel: 25, icon: '⛪', effects: [{ kind: 'hpPct', value: 8 }, { kind: 'defPct', value: 4 }] },
+    { id: 'c_active', name: 'Punição Sagrada', description: 'Feixe de luz celeste: +9% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '☀️', effects: [{ kind: 'atkPct', value: 9 }] },
+    { id: 'c_grace', name: 'Graça Protetora', description: 'Bênção de luz: +6 de Defesa e +4% de HP por nível.', type: 'passive', maxLevel: 25, icon: '🛡️', effects: [{ kind: 'defFlat', value: 6 }, { kind: 'hpPct', value: 4 }] },
+    { id: 'c_smite', name: 'Julgamento', description: 'Poder divino: +8 de Ataque e +5% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '⚖️', effects: [{ kind: 'atkFlat', value: 8 }, { kind: 'atkPct', value: 5 }] }
+  ],
+  Paladin: [
+    { id: 'p_passive', name: 'Selo do Dever', description: 'Armadura sagrada: +7% de Defesa e +6% de HP por nível.', type: 'passive', maxLevel: 25, icon: '🎖️', effects: [{ kind: 'defPct', value: 7 }, { kind: 'hpPct', value: 6 }] },
+    { id: 'p_active', name: 'Golpe Retributivo', description: 'Impacto justiceiro: +10% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '⚔️', effects: [{ kind: 'atkPct', value: 10 }] },
+    { id: 'p_shield', name: 'Aura de Devoção', description: 'Santuário ativo: +8 de Defesa por nível.', type: 'passive', maxLevel: 25, icon: '🛡️', effects: [{ kind: 'defFlat', value: 8 }] },
+    { id: 'p_justice', name: 'Cólera da Justiça', description: 'Fúria sagrada: +7% de Ataque e +3% de Defesa por nível.', type: 'passive', maxLevel: 25, icon: '⚡', effects: [{ kind: 'atkPct', value: 7 }, { kind: 'defPct', value: 3 }] }
+  ],
+  Necromancer: [
+    { id: 'n_passive', name: 'Alma Sombria', description: 'Sinfonia da morte: +11% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '💀', effects: [{ kind: 'atkPct', value: 11 }] },
+    { id: 'n_active', name: 'Explosão de Cadáver', description: 'Detonação nefasta: +13% de Ataque por nível.', type: 'active', maxLevel: 25, icon: '💥', effects: [{ kind: 'atkPct', value: 13 }] },
+    { id: 'n_drain', name: 'Dreno Vital', description: 'Roubo de vida: +5% de HP e +5% de Ataque por nível.', type: 'passive', maxLevel: 25, icon: '🩸', effects: [{ kind: 'hpPct', value: 5 }, { kind: 'atkPct', value: 5 }] },
+    { id: 'n_boneShield', name: 'Armadura de Ossos', description: 'Escudo ósseo: +5 de Defesa e +4% de Defesa por nível.', type: 'passive', maxLevel: 25, icon: '🦴', effects: [{ kind: 'defFlat', value: 5 }, { kind: 'defPct', value: 4 }] }
   ]
 };
 
@@ -58,19 +82,54 @@ const ITEM_NAMES: Record<ItemType, string[]> = {
     'Arco Longo', 'Besta Pesada',
     'Machado de Combate', 'Machado Duplo',
     'Martelo de Guerra', 'Maça Cravejada',
-    'Lança de Prata', 'Alabarda Real'
+    'Lança de Prata', 'Alabarda Real',
+    'Maça Sagrada', 'Grimório Oculto', 'Martelo da Justiça', 'Foice da Morte', 'Cajado Divino'
   ],
   armor: [
     'Manto de Seda', 'Túnica do Aprendiz', 'Manto Sombrio',
     'Couraça de Aço', 'Armadura de Placas',
     'Armadura de Couro', 'Gibão Reforçado',
-    'Elmo de Ferro', 'Capacete Alado', 'Coroa de Batalha'
+    'Elmo de Ferro', 'Capacete Alado', 'Coroa de Batalha',
+    'Manto Sagrado', 'Manto Sombrio do Necro', 'Armadura Consagrada'
   ],
   ring: [
     'Anel de Ouro', 'Anel de Jade', 'Selo de Opala', 'Anel do Poder', 'Anel de Mithril',
-    'Amuleto Rúnico', 'Colar de Safira', 'Pingente de Rubi'
+    'Amuleto Rúnico', 'Colar de Safira', 'Pingente de Rubi',
+    'Selo do Paladino', 'Anel do Pacto Profano', 'Rosário Divino'
   ]
 };
+
+export function resolveClassRequirement(name: string, type: ItemType): CharacterClass | null {
+  const n = name.toLowerCase();
+
+  if (type === 'ring') {
+    if (n.includes('paladino')) return 'Paladin';
+    if (n.includes('pacto profano')) return 'Necromancer';
+    if (n.includes('divino')) return 'Cleric';
+    return null;
+  }
+
+  if (type === 'weapon') {
+    if (n.includes('cajado divino') || n.includes('maça sagrada')) return 'Cleric';
+    if (n.includes('martelo da justiça')) return 'Paladin';
+    if (n.includes('foice da morte') || n.includes('grimório oculto')) return 'Necromancer';
+    if (n.includes('cajado') || n.includes('cetro')) return 'Mage';
+    if (n.includes('adaga') || n.includes('punhal') || n.includes('arco') || n.includes('besta')) return 'Rogue';
+    if (n.includes('martelo') || n.includes('maça')) return 'Paladin';
+    return 'Warrior';
+  }
+
+  if (type === 'armor') {
+    if (n.includes('manto sagrado')) return 'Cleric';
+    if (n.includes('armadura consagrada')) return 'Paladin';
+    if (n.includes('manto sombrio do necro')) return 'Necromancer';
+    if (n.includes('manto') || n.includes('túnica')) return 'Mage';
+    if (n.includes('couro') || n.includes('gibão')) return 'Rogue';
+    return 'Warrior';
+  }
+
+  return null;
+}
 
 /** Gera um item de forma determinística a partir da seed. Retorna [item, novaSeed]. */
 export function generateRandomItem(level: number, seed: number): [Item, number] {
@@ -118,6 +177,7 @@ export function generateRandomItem(level: number, seed: number): [Item, number] 
   [s, r] = nextRandom(s);
   const baseName = ITEM_NAMES[type][Math.floor(r * ITEM_NAMES[type].length)];
   const name = `${ITEM_PREFIXES[rarity]} ${baseName}`;
+  const classRequirement = resolveClassRequirement(baseName, type);
 
   const item: Item = {
     id,
@@ -128,7 +188,8 @@ export function generateRandomItem(level: number, seed: number): [Item, number] 
     defense,
     hp,
     refineLevel: 0,
-    levelRequired: level
+    levelRequired: level,
+    classRequirement
   };
 
   return [item, s];
@@ -173,7 +234,7 @@ export function generateRandomRune(level: number, seed: number): [Rune, number] 
   // Standard formatting
   value = Math.round(value * 100) / 100;
 
-  const name = `${RUNE_NAMES[statType]} (${level}º Grau)`;
+  const name = `${RUNE_NAMES[statType]} (${level.toString()}º Grau)`;
 
   const rune: Rune = { id, name, statType, value, level };
   return [rune, s];
@@ -181,9 +242,9 @@ export function generateRandomRune(level: number, seed: number): [Rune, number] 
 
 // Calculate effective stats for a character
 export function calculateCharacterStats(char: Character) {
-  let baseAtk = 0;
-  let baseDef = 0;
-  let baseHp = 0;
+  let baseAtk: number;
+  let baseDef: number;
+  let baseHp: number;
 
   if (char.class === 'Warrior') {
     baseAtk = 8 + (char.level - 1) * 2;
@@ -197,6 +258,18 @@ export function calculateCharacterStats(char: Character) {
     baseAtk = 12 + (char.level - 1) * 4;
     baseDef = 5 + (char.level - 1) * 1.5;
     baseHp = 90 + (char.level - 1) * 18;
+  } else if (char.class === 'Cleric') {
+    baseAtk = 9 + (char.level - 1) * 2.5;
+    baseDef = 8 + (char.level - 1) * 2.2;
+    baseHp = 100 + (char.level - 1) * 20;
+  } else if (char.class === 'Paladin') {
+    baseAtk = 11 + (char.level - 1) * 2.8;
+    baseDef = 12 + (char.level - 1) * 3.2;
+    baseHp = 130 + (char.level - 1) * 28;
+  } else {
+    baseAtk = 18 + (char.level - 1) * 5.5;
+    baseDef = 2 + (char.level - 1) * 0.7;
+    baseHp = 75 + (char.level - 1) * 13;
   }
 
   let gearAtk = 0;
@@ -302,6 +375,7 @@ interface SimModel {
   runeStash: Rune[];
   progression: Progression;
   seed: number;
+  unlockedStashTabs: number;
 }
 
 function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: string[] } {
@@ -379,10 +453,14 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
     // Item drop (20%)
     [seed, r] = nextRandom(seed);
     if (r <= 0.20) {
-      let item: Item;
-      [item, seed] = generateRandomItem(avgLvl, seed);
-      inventory = [...inventory, item];
-      if (collectLogs) logs.push(`🎁 [Saque] Encontrou ${item.name}!`);
+      if (inventory.length < m.unlockedStashTabs * 50) {
+        let item: Item;
+        [item, seed] = generateRandomItem(avgLvl, seed);
+        inventory = [...inventory, item];
+        if (collectLogs) logs.push(`🎁 [Saque] Encontrou ${item.name}!`);
+      } else {
+        if (collectLogs) logs.push('⚠️ [Saque] Seu Baú está cheio! Desbloqueie mais abas.');
+      }
     }
 
     // Enchant stone drop (30%)
@@ -392,7 +470,7 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
       [seed, rr] = nextRandom(seed);
       const stones = 1 + Math.floor(rr * difficulty);
       enchantStones += stones;
-      if (collectLogs) logs.push(`💎 [Saque] Encontrou ${stones} Pedra(s) de Encantamento!`);
+      if (collectLogs) logs.push(`💎 [Saque] Encontrou ${stones.toString()} Pedra(s) de Encantamento!`);
     }
 
     // Rune drop (8%)
@@ -412,7 +490,7 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
 
       goldGained += Math.round(300 * difficulty * goldModifier);
       enchantStones += 5;
-      if (collectLogs) logs.push(`🎉 [Progresso] Ato ${act} concluído! Bônus de 5 Pedras recebido!`);
+      if (collectLogs) logs.push(`🎉 [Progresso] Ato ${act.toString()} concluído! Bônus de 5 Pedras recebido!`);
 
       if (nextAct > 3) {
         nextAct = 1;
@@ -421,7 +499,7 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
 
         goldGained += Math.round(1500 * difficulty * goldModifier);
         enchantStones += 15;
-        if (collectLogs) logs.push(`👑 [DIFICULDADE] Você conquistou a Dificuldade ${difficulty}! Nova dificuldade destravada!`);
+        if (collectLogs) logs.push(`👑 [DIFICULDADE] Você conquistou a Dificuldade ${difficulty.toString()}! Nova dificuldade destravada!`);
       }
     }
   }
@@ -443,7 +521,7 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
     }
 
     if (leveled && collectLogs) {
-      logs.push(`⭐ [LEVEL UP] ${char.name} subiu para o Nível ${charLvl}! (+2 Pontos de Habilidade)`);
+      logs.push(`⭐ [LEVEL UP] ${char.name} subiu para o Nível ${charLvl.toString()}! (+2 Pontos de Habilidade)`);
     }
 
     return {
@@ -456,9 +534,13 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
   });
 
   if ((stageUp || actUp || diffUp) && collectLogs) {
-    const diffNames = ['Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo'];
-    const diffText = diffNames[nextDifficulty - 1] || `Dificuldade ${nextDifficulty}`;
-    logs.push(`⚔️ Avançou para a Fase [${diffText} - Ato ${nextAct} - Fase ${nextStage}]`);
+    const diffNames = [
+      'Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo',
+      'Purgatório', 'Eternidade', 'Caos', 'Vazio', 'Apocalipse',
+      'Divino', 'Demiurgo', 'Estelar', 'Ancestral', 'Singularidade', 'Infinito'
+    ];
+    const diffText = diffNames[nextDifficulty - 1] || `Dificuldade ${nextDifficulty.toString()}`;
+    logs.push(`⚔️ Avançou para a Fase [${diffText} - Ato ${nextAct.toString()} - Fase ${nextStage.toString()}]`);
   }
 
   return {
@@ -475,7 +557,8 @@ function stepOnce(m: SimModel, collectLogs: boolean): { model: SimModel; logs: s
         stage: nextStage,
         killsInCurrentStage: Math.round(stageKills * 100) / 100
       },
-      seed
+      seed,
+      unlockedStashTabs: m.unlockedStashTabs
     },
     logs
   };
@@ -511,6 +594,9 @@ interface GameActions {
   clearCube: () => void;
   autoFillCube: () => void;
   synthesizeCube: () => void;
+  addToParty: (charId: string) => void;
+  removeFromParty: (charId: string) => void;
+  buyStashTab: () => void;
 }
 
 export const useGameStore = create<GameState & GameActions>()(
@@ -521,9 +607,11 @@ export const useGameStore = create<GameState & GameActions>()(
       enchantStones: 5,
       progression: initialProgression,
       party: [],
+      tavern: [], // Inactive characters
+      unlockedStashTabs: 1, // Starts with Tab 1 unlocked (50 slots)
       inventory: [],
       runeStash: [],
-      cubeSlots: Array(9).fill(null),
+      cubeSlots: [null, null, null, null, null, null, null, null, null] as (Item | null)[],
       layoutMode: 'widget',
       combatLog: ['Bem-vindo ao Idle RPG! Crie seu primeiro herói para começar.'],
       globalCombatPower: 0,
@@ -534,12 +622,21 @@ export const useGameStore = create<GameState & GameActions>()(
       addLog: (message: string) => set((state) => withLogsState(state.combatLog, message)),
 
       hireCharacter: (name: string, charClass: CharacterClass) => set((state) => {
-        if (state.party.length >= 3) {
-          return {}; // Max 3 heroes reached
+        if (state.party.length + state.tavern.length >= 12) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Taverna] A taverna está lotada (máximo 12 heróis)!']) };
         }
 
         const [seed, id] = seededId(state.seed);
-        const nameClean = name.trim() || `${charClass} #${state.party.length + 1}`;
+        const totalCount = state.party.length + state.tavern.length + 1;
+        const classNames: Record<CharacterClass, string> = {
+          Warrior: 'Guerreiro',
+          Mage: 'Mago',
+          Rogue: 'Ladino',
+          Cleric: 'Clérigo',
+          Paladin: 'Paladino',
+          Necromancer: 'Necromante'
+        };
+        const nameClean = name.trim() || `${classNames[charClass]} #${totalCount.toString()}`;
 
         const newChar: Character = {
           id,
@@ -548,24 +645,34 @@ export const useGameStore = create<GameState & GameActions>()(
           level: 1,
           xp: 0,
           xpNeeded: 100,
-          skillPoints: 1, // Start with 1 skill point
+          skillPoints: 1, // Começa com 1 ponto de habilidade
           skills: {},
           equipment: { weapon: null, armor: null, ring: null },
           runes: [null, null, null]
         };
 
-        const updatedParty = [...state.party, newChar];
-
-        return {
-          party: updatedParty,
-          seed,
-          globalCombatPower: calculateGlobalCombatPower(updatedParty),
-          combatLog: withLogs(state.combatLog, [`🛡️ [Herói] ${nameClean} (${charClass}) juntou-se ao grupo!`])
-        };
+        if (state.party.length < 3) {
+          const updatedParty = [...state.party, newChar];
+          return {
+            party: updatedParty,
+            seed,
+            globalCombatPower: calculateGlobalCombatPower(updatedParty),
+            combatLog: withLogs(state.combatLog, [`🛡️ [Herói] ${nameClean} juntou-se ao grupo ativo!`])
+          };
+        } else {
+          const updatedTavern = [...state.tavern, newChar];
+          return {
+            tavern: updatedTavern,
+            seed,
+            combatLog: withLogs(state.combatLog, [`💤 [Herói] ${nameClean} contratado e enviado para a reserva (Taverna).`])
+          };
+        }
       }),
 
       fireCharacter: (charId: string) => set((state) => {
-        const target = state.party.find(c => c.id === charId);
+        const inParty = state.party.find(c => c.id === charId);
+        const inTavern = state.tavern.find(c => c.id === charId);
+        const target = inParty ?? inTavern;
         if (!target) return {};
 
         const newInventory = [...state.inventory];
@@ -580,14 +687,22 @@ export const useGameStore = create<GameState & GameActions>()(
           if (rune) newRuneStash.push(rune);
         }
 
-        const updatedParty = state.party.filter(c => c.id !== charId);
+        let updatedParty = state.party;
+        let updatedTavern = state.tavern;
+
+        if (inParty) {
+          updatedParty = state.party.filter(c => c.id !== charId);
+        } else {
+          updatedTavern = state.tavern.filter(c => c.id !== charId);
+        }
 
         return {
           party: updatedParty,
+          tavern: updatedTavern,
           inventory: newInventory,
           runeStash: newRuneStash,
           globalCombatPower: calculateGlobalCombatPower(updatedParty),
-          combatLog: withLogs(state.combatLog, [`🚪 [Herói] ${target.name} saiu do grupo. Equipamentos devolvidos.`])
+          combatLog: withLogs(state.combatLog, [`🚪 [Herói] ${target.name} foi dispensado do grupo.`])
         };
       }),
 
@@ -607,7 +722,7 @@ export const useGameStore = create<GameState & GameActions>()(
           return { ...char, skillPoints: char.skillPoints - 1, skills: skillsCopy };
         });
 
-        const skillName = skillConfig?.name || skillId;
+        const skillName = skillConfig?.name ?? skillId;
 
         return {
           party: updatedParty,
@@ -682,7 +797,7 @@ export const useGameStore = create<GameState & GameActions>()(
           party: updatedParty,
           runeStash: nextRuneStash,
           globalCombatPower: calculateGlobalCombatPower(updatedParty),
-          combatLog: withLogs(state.combatLog, [`💎 [Runa] ${targetChar.name} equipou ${rune.name} no slot ${slotIndex + 1}.`])
+          combatLog: withLogs(state.combatLog, [`💎 [Runa] ${targetChar.name} equipou ${rune.name} no slot ${(slotIndex + 1).toString()}.`])
         };
       }),
 
@@ -717,7 +832,7 @@ export const useGameStore = create<GameState & GameActions>()(
         return {
           gold: state.gold + goldGain,
           inventory: state.inventory.filter(i => i.id !== itemId),
-          combatLog: withLogs(state.combatLog, [`🪙 [Loja] Vendeu ${item.name} por ${goldGain} Gold.`])
+          combatLog: withLogs(state.combatLog, [`🪙 [Loja] Vendeu ${item.name} por ${goldGain.toString()} Gold.`])
         };
       }),
 
@@ -731,7 +846,7 @@ export const useGameStore = create<GameState & GameActions>()(
         return {
           enchantStones: state.enchantStones + stonesGain,
           inventory: state.inventory.filter(i => i.id !== itemId),
-          combatLog: withLogs(state.combatLog, [`🔨 [Desmontar] Desmontou ${item.name} e obteve ${stonesGain} Pedra(s) de Encantamento.`])
+          combatLog: withLogs(state.combatLog, [`🔨 [Desmontar] Desmontou ${item.name} e obteve ${stonesGain.toString()} Pedra(s) de Encantamento.`])
         };
       }),
 
@@ -760,7 +875,7 @@ export const useGameStore = create<GameState & GameActions>()(
         return {
           gold: state.gold + goldGain,
           inventory: state.inventory.filter(i => !target.has(i.rarity)),
-          combatLog: withLogs(state.combatLog, [`🪙 [Loja] Vendeu ${toSell.length} item(s) por ${goldGain.toLocaleString()} Gold.`])
+          combatLog: withLogs(state.combatLog, [`🪙 [Loja] Vendeu ${toSell.length.toString()} item(s) por ${goldGain.toLocaleString()} Gold.`])
         };
       }),
 
@@ -773,6 +888,9 @@ export const useGameStore = create<GameState & GameActions>()(
         }
         if (state.party.length === 0) {
           return { combatLog: withLogs(state.combatLog, [`⚠️ [Craft] Crie pelo menos um personagem para craftar itens.`]) };
+        }
+        if (state.inventory.length >= state.unlockedStashTabs * 50) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Craft] Seu Baú está cheio! Compre mais abas para liberar espaço.']) };
         }
 
         const avgLevel = Math.round(state.party.reduce((sum, c) => sum + c.level, 0) / state.party.length);
@@ -788,38 +906,61 @@ export const useGameStore = create<GameState & GameActions>()(
       }),
 
       enchantItem: (itemId: string) => set((state) => {
-        const item = state.inventory.find(i => i.id === itemId);
+        // Locate item: may be in inventory or equipped on a character
+        const inventoryItem = state.inventory.find(i => i.id === itemId);
+
+        const findEquippedIn = (chars: Character[]): Item | null => {
+          for (const c of chars) {
+            for (const slot of ['weapon', 'armor', 'ring'] as const) {
+              const eq = c.equipment[slot];
+              if (eq?.id === itemId) return eq;
+            }
+          }
+          return null;
+        };
+
+        const item = inventoryItem ?? findEquippedIn(state.party) ?? findEquippedIn(state.tavern);
         if (!item) return {};
 
         const stoneCost = 1 + Math.floor(item.refineLevel / 3);
         const goldCost = Math.round((item.refineLevel + 1) * 80);
 
         if (state.gold < goldCost || state.enchantStones < stoneCost) {
-          return { combatLog: withLogs(state.combatLog, [`⚠️ [Encantar] Ouro ou Pedras de Encantamento insuficientes para o upgrade +${item.refineLevel + 1}.`]) };
+          return { combatLog: withLogs(state.combatLog, [`⚠️ [Encantar] Ouro ou Pedras insuficientes para +${(item.refineLevel + 1).toString()}.`]) };
         }
 
-        // 100% up to +4, then drops slowly (min 35%)
         const successRate = Math.max(0.35, 1.0 - Math.max(0, item.refineLevel - 3) * 0.15);
         const [seed, rolled] = nextRandom(state.seed);
 
-        let nextInventory: Item[];
-        let message: string;
+        const applyRefine = (it: Item): Item => {
+          if (it.id !== itemId) return it;
+          return rolled <= successRate
+            ? { ...it, refineLevel: it.refineLevel + 1 }
+            : { ...it, refineLevel: Math.max(0, it.refineLevel - 1) };
+        };
 
-        if (rolled <= successRate) {
-          nextInventory = state.inventory.map(i => (i.id !== itemId ? i : { ...i, refineLevel: i.refineLevel + 1 }));
-          message = `✔️ [Encantar] Sucesso! ${item.name} aprimorado para +${item.refineLevel + 1}!`;
-        } else {
-          // Fail: refine level drops by 1 (min 0), item NOT destroyed
-          nextInventory = state.inventory.map(i => (i.id !== itemId ? i : { ...i, refineLevel: Math.max(0, i.refineLevel - 1) }));
-          message = `❌ [Encantar] Falha! ${item.name} caiu para +${Math.max(0, item.refineLevel - 1)}.`;
-        }
+        const newLevel = rolled <= successRate ? item.refineLevel + 1 : Math.max(0, item.refineLevel - 1);
+        const message = rolled <= successRate
+          ? `✔️ [Encantar] Sucesso! ${item.name} aprimorado para +${newLevel.toString()}!`
+          : `❌ [Encantar] Falha! ${item.name} caiu para +${newLevel.toString()}.`;
+
+        const patchChar = (c: Character): Character => ({
+          ...c,
+          equipment: {
+            weapon: c.equipment.weapon ? applyRefine(c.equipment.weapon) : null,
+            armor:  c.equipment.armor  ? applyRefine(c.equipment.armor)  : null,
+            ring:   c.equipment.ring   ? applyRefine(c.equipment.ring)   : null,
+          },
+        });
 
         return {
           gold: state.gold - goldCost,
           enchantStones: state.enchantStones - stoneCost,
-          inventory: nextInventory,
+          inventory: state.inventory.map(applyRefine),
+          party:  state.party.map(patchChar),
+          tavern: state.tavern.map(patchChar),
           seed,
-          combatLog: withLogs(state.combatLog, [message])
+          combatLog: withLogs(state.combatLog, [message]),
         };
       }),
 
@@ -849,7 +990,8 @@ export const useGameStore = create<GameState & GameActions>()(
           inventory: state.inventory,
           runeStash: state.runeStash,
           progression: state.progression,
-          seed
+          seed,
+          unlockedStashTabs: state.unlockedStashTabs
         };
 
         const goldBefore = model.gold;
@@ -864,7 +1006,7 @@ export const useGameStore = create<GameState & GameActions>()(
         if (offline) {
           const mins = Math.max(1, Math.floor((due * TICK_MS) / 60000));
           const goldEarned = model.gold - goldBefore;
-          batch.push(`🌙 [Offline] Bem-vindo de volta! Em ~${mins} min, sua party farmou +${goldEarned.toLocaleString()} de ouro.`);
+          batch.push(`🌙 [Offline] Bem-vindo de volta! Em ~${mins.toString()} min, sua party farmou +${goldEarned.toLocaleString()} de ouro.`);
         }
 
         return {
@@ -886,9 +1028,11 @@ export const useGameStore = create<GameState & GameActions>()(
         enchantStones: 5,
         progression: initialProgression,
         party: [],
+        tavern: [],
+        unlockedStashTabs: 1,
         inventory: [],
         runeStash: [],
-        cubeSlots: Array(9).fill(null),
+        cubeSlots: [null, null, null, null, null, null, null, null, null] as (Item | null)[],
         globalCombatPower: 0,
         seed: randomSeed(),
         lastTickMs: 0,
@@ -935,7 +1079,7 @@ export const useGameStore = create<GameState & GameActions>()(
         if (itemsToReturn.length === 0) return {};
 
         return {
-          cubeSlots: Array(9).fill(null),
+          cubeSlots: [null, null, null, null, null, null, null, null, null] as (Item | null)[],
           inventory: [...state.inventory, ...itemsToReturn]
         };
       }),
@@ -944,19 +1088,24 @@ export const useGameStore = create<GameState & GameActions>()(
         const itemsToReturn = state.cubeSlots.filter((i): i is Item => i !== null);
         const activeInventory = [...state.inventory, ...itemsToReturn];
 
-        const grouped: { [rarity in ItemRarity]?: Item[] } = {};
+        const grouped: Partial<Record<ItemRarity, Item[]>> = {};
         activeInventory.forEach(item => {
-          if (!grouped[item.rarity]) grouped[item.rarity] = [];
-          grouped[item.rarity]!.push(item);
+          const arr = grouped[item.rarity] ?? [];
+          arr.push(item);
+          grouped[item.rarity] = arr;
         });
 
-        const eligibleRarity = (['common', 'uncommon', 'rare', 'epic', 'legendary'] as ItemRarity[]).find(r => (grouped[r]?.length || 0) >= 9);
+        const eligibleRarity = (['common', 'uncommon', 'rare', 'epic', 'legendary'] as ItemRarity[]).find(r => (grouped[r]?.length ?? 0) >= 9);
 
         if (!eligibleRarity) {
           return { combatLog: withLogs(state.combatLog, ['⚠️ [Cubo] Não há 9 itens do mesmo grau para preenchimento automático!']) };
         }
 
-        const itemsToPlace = grouped[eligibleRarity]!.slice(0, 9);
+        const itemsOfRarity = grouped[eligibleRarity];
+        if (!itemsOfRarity) {
+          return {};
+        }
+        const itemsToPlace = itemsOfRarity.slice(0, 9);
         const itemsToPlaceIds = new Set(itemsToPlace.map(i => i.id));
         const nextInventory = activeInventory.filter(i => !itemsToPlaceIds.has(i.id));
 
@@ -973,22 +1122,24 @@ export const useGameStore = create<GameState & GameActions>()(
           return { combatLog: withLogs(state.combatLog, ['⚠️ [Cubo] Preencha os 9 slots do cubo para sintetizar.']) };
         }
 
-        const targetRarity = slots[0]!.rarity;
-        const allSame = slots.every(s => s!.rarity === targetRarity);
+        const firstSlot = slots[0];
+        if (!firstSlot) return {};
+        const targetRarity = firstSlot.rarity;
+        const allSame = slots.every(s => s !== null && s.rarity === targetRarity);
         if (!allSame) {
           return { combatLog: withLogs(state.combatLog, ['⚠️ [Cubo] Todos os 9 itens devem ser da mesma raridade.']) };
         }
 
-        const totalLvl = slots.reduce((sum, s) => sum + s!.levelRequired, 0);
+        const totalLvl = slots.reduce((sum, s) => sum + (s?.levelRequired ?? 0), 0);
         const avgLvl = Math.round(totalLvl / 9);
 
-        let nextRarity: ItemRarity = 'uncommon';
+        let nextRarity: ItemRarity;
         let levelBonus = 1;
         if (targetRarity === 'common') nextRarity = 'uncommon';
         else if (targetRarity === 'uncommon') nextRarity = 'rare';
         else if (targetRarity === 'rare') nextRarity = 'epic';
         else if (targetRarity === 'epic') nextRarity = 'legendary';
-        else if (targetRarity === 'legendary') {
+        else {
           nextRarity = 'legendary';
           levelBonus = 3;
         }
@@ -1010,10 +1161,64 @@ export const useGameStore = create<GameState & GameActions>()(
         }
 
         return {
-          cubeSlots: Array(9).fill(null),
+          cubeSlots: [null, null, null, null, null, null, null, null, null] as (Item | null)[],
           inventory: [...state.inventory, newItem],
           seed,
           combatLog: withLogs(state.combatLog, [`✨ [SÍNTESE] Criou: ${newItem.name} (${nextRarity})!`])
+        };
+      }),
+
+      addToParty: (charId: string) => set((state) => {
+        const char = state.tavern.find(c => c.id === charId);
+        if (!char) return {};
+        if (state.party.length >= 3) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Grupo] O grupo ativo está cheio (máximo 3 heróis)!']) };
+        }
+
+        const updatedParty = [...state.party, char];
+        const updatedTavern = state.tavern.filter(c => c.id !== charId);
+
+        return {
+          party: updatedParty,
+          tavern: updatedTavern,
+          globalCombatPower: calculateGlobalCombatPower(updatedParty),
+          combatLog: withLogs(state.combatLog, [`🛡️ [Grupo] ${char.name} foi promovido para o grupo ativo.`])
+        };
+      }),
+
+      removeFromParty: (charId: string) => set((state) => {
+        const char = state.party.find(c => c.id === charId);
+        if (!char) return {};
+        if (state.party.length <= 1) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Grupo] Você precisa manter pelo menos 1 herói ativo no grupo!']) };
+        }
+
+        const updatedTavern = [...state.tavern, char];
+        const updatedParty = state.party.filter(c => c.id !== charId);
+
+        return {
+          party: updatedParty,
+          tavern: updatedTavern,
+          globalCombatPower: calculateGlobalCombatPower(updatedParty),
+          combatLog: withLogs(state.combatLog, [`💤 [Grupo] ${char.name} foi enviado para a taverna.`])
+        };
+      }),
+
+      buyStashTab: () => set((state) => {
+        const nextTab = state.unlockedStashTabs + 1;
+        if (nextTab > 5) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Baú] Limite máximo de 5 abas atingido!']) };
+        }
+
+        const cost = Math.pow(5, nextTab - 2) * 2000;
+        if (state.gold < cost) {
+          return { combatLog: withLogs(state.combatLog, [`⚠️ [Baú] Ouro insuficiente! Requer ${cost.toLocaleString()}g para a Aba ${nextTab.toString()}.`]) };
+        }
+
+        return {
+          gold: state.gold - cost,
+          unlockedStashTabs: nextTab,
+          combatLog: withLogs(state.combatLog, [`🔓 [Baú] Aba ${nextTab.toString()} liberada com sucesso! (+50 slots)`])
         };
       })
     }),
@@ -1024,6 +1229,8 @@ export const useGameStore = create<GameState & GameActions>()(
         enchantStones: state.enchantStones,
         progression: state.progression,
         party: state.party,
+        tavern: state.tavern,
+        unlockedStashTabs: state.unlockedStashTabs,
         inventory: state.inventory,
         runeStash: state.runeStash,
         cubeSlots: state.cubeSlots,

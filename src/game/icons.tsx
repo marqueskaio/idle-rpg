@@ -5,7 +5,7 @@ import {
   GiWarhammer, GiTrident, GiCape, GiClosedBarbute, GiBreastplate,
   GiChestArmor, GiLeatherArmor, GiNecklace, GiCutDiamond, GiRing,
   GiShield, GiPointyHat, GiHood, GiTwoCoins, GiCrystalShine,
-  GiStarFormation, GiSwordsPower, GiHearts, GiUpgrade
+  GiStarFormation, GiSwordsPower, GiHearts, GiUpgrade, GiSun, GiScythe
 } from 'react-icons/gi';
 import type { CharacterClass } from './types';
 
@@ -53,6 +53,9 @@ function resolveClassIcon(cls: CharacterClass): IconType {
     case 'Warrior': return GiShield;
     case 'Mage': return GiPointyHat;
     case 'Rogue': return GiHood;
+    case 'Cleric': return GiSun;
+    case 'Paladin': return GiWarhammer;
+    case 'Necromancer': return GiScythe;
   }
 }
 

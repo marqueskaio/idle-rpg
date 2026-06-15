@@ -196,29 +196,7 @@ body {
 /* ----------------------------------------------------
    STASH / INVENTORY GRID
    ---------------------------------------------------- */
-.stash-tabs {
-  display: flex;
-  gap: 2px;
-  border-bottom: 1px solid var(--color-border);
-  background-color: #121111;
-  padding: 2px 2px 0;
-}
 
-.stash-tab-btn {
-  background: #201e1c;
-  border: 1px solid var(--color-border);
-  border-bottom: none;
-  color: var(--color-text-dim);
-  padding: 4px 14px;
-  cursor: pointer;
-  font-size: 12px;
-  font-weight: 600;
-}
-.stash-tab-btn.active {
-  background: var(--bg-panel);
-  color: var(--color-gold-bright);
-  border-color: var(--color-border-bright);
-}
 
 .stash-grid {
   display: grid;
@@ -714,3 +692,70 @@ body {
 }
 
 .taskbar-section { display: flex; align-items: center; gap: 8px; height: 100%; }
+
+/* Stash Tabs styles */
+.stash-tabs {
+  border-bottom: 1px solid var(--color-border);
+  padding-bottom: 2px;
+  margin-bottom: 2px;
+}
+
+.stash-tab-btn {
+  border: 1px solid var(--color-border) !important;
+  background: #141211 !important;
+  color: var(--color-text-dim) !important;
+  padding: 4px 8px !important;
+  font-size: 11px !important;
+  cursor: pointer;
+  transition: all 0.15s ease;
+}
+
+.stash-tab-btn:hover {
+  border-color: var(--color-gold) !important;
+  color: var(--color-text) !important;
+}
+
+.stash-tab-btn.active {
+  background: var(--color-border) !important;
+  color: var(--color-gold-bright) !important;
+  border-color: var(--color-gold) !important;
+  font-weight: bold !important;
+}
+
+.stash-tab-btn.buy-tab-btn {
+  border-style: dashed !important;
+  border-color: var(--color-gold) !important;
+  color: var(--color-gold) !important;
+  background: transparent !important;
+}
+
+.stash-tab-btn.buy-tab-btn:hover {
+  background: rgba(207, 168, 110, 0.08) !important;
+  color: var(--color-gold-bright) !important;
+}
+
+/* Tavern character selection style */
+.tavern-char-btn {
+  opacity: 0.85;
+}
+.tavern-char-btn.active {
+  opacity: 1;
+  border-color: var(--color-gold-bright) !important;
+}
+
+/* Compact Mode Act Backgrounds */
+.taskbar-stage.compact-bg-act-1 {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(34, 197, 94, 0.12), transparent 65%),
+    #040a05 !important;
+}
+.taskbar-stage.compact-bg-act-2 {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(249, 115, 22, 0.12), transparent 65%),
+    #0e0b07 !important;
+}
+.taskbar-stage.compact-bg-act-3 {
+  background:
+    radial-gradient(ellipse 80% 60% at 50% 40%, rgba(168, 85, 247, 0.12), transparent 65%),
+    #0a040d !important;
+}

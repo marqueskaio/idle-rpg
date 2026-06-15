@@ -6,12 +6,14 @@ import { ItemIcon, RuneIcon, ClassIcon } from '../game/icons';
 interface CharacterModalProps {
   charId: string;
   onClose: () => void;
+  onSelectForgeItem?: (itemId: string) => void;
 }
 
 type TabType = 'skills' | 'equipment' | 'runes' | 'options';
 
-export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose }) => {
+export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose, onSelectForgeItem }) => {
   const party = useGameStore(s => s.party);
+  const tavern = useGameStore(s => s.tavern);
   const inventory = useGameStore(s => s.inventory);
   const runeStash = useGameStore(s => s.runeStash);
   const allocateSkillPoint = useGameStore(s => s.allocateSkillPoint);
@@ -25,8 +27,8 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
   const [selectedSlot, setSelectedSlot] = useState<'weapon' | 'armor' | 'ring' | null>(null);
   const [selectedRuneSlot, setSelectedRuneSlot] = useState<number | null>(null);
 
-  // Find target character in party
-  const char = party.find(c => c.id === charId);
+  // Find target character in party or tavern
+  const char = party.find(c => c.id === charId) ?? tavern.find(c => c.id === charId);
   if (!char) {
     return null;
   }
@@ -43,7 +45,10 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
 
   // Get eligible items from inventory for selection
   const getEligibleItems = (type: 'weapon' | 'armor' | 'ring') => {
-    return inventory.filter(item => item.type === type);
+    return inventory.filter(item => 
+      item.type === type && 
+      (!item.classRequirement || item.classRequirement === char.class)
+    );
   };
 
 
@@ -52,7 +57,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
 
   return (
     <div className="modal-overlay" onClick={onClose}>
-      <div className="modal-content" onClick={e => e.stopPropagation()} style={{ maxWidth: '360px', height: '90%', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
+      <div className="modal-content" onClick={e => { e.stopPropagation(); }} style={{ maxWidth: '360px', height: '90%', display: 'flex', flexDirection: 'column', gap: '8px', padding: '12px' }}>
         
         {/* Header */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>
@@ -77,7 +82,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
             <span>{char.xp} / {char.xpNeeded} XP</span>
           </div>
           <div className="progress-track" style={{ height: '5px' }}>
-            <div className="progress-fill xp" style={{ width: `${xpPercent}%` }} />
+            <div className="progress-fill xp" style={{ width: `${xpPercent.toString()}%` }} />
           </div>
         </div>
 
@@ -133,7 +138,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>Arma</span>
                   <div 
-                    className={`item-slot rarity-${char.equipment.weapon?.rarity || 'common'}`} 
+                    className={`item-slot rarity-${char.equipment.weapon?.rarity ?? 'common'}`} 
                     onClick={() => { setSelectedSlot('weapon'); setSelectedRuneSlot(null); }}
                     style={{ width: '56px', height: '56px', borderStyle: char.equipment.weapon ? 'solid' : 'dashed' }}
                   >
@@ -145,13 +150,25 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                     ) : '⚔️'}
                   </div>
                   {char.equipment.weapon && (
-                    <button 
-                      className="btn-danger" 
-                      onClick={() => unequipItem(char.id, 'weapon')} 
-                      style={{ padding: '1px 4px', fontSize: '9px', marginTop: '2px' }}
-                    >
-                      Remover
-                    </button>
+                    <div style={{ display: 'flex', gap: '3px', marginTop: '2px', width: '100%' }}>
+                      <button 
+                        className="btn-danger" 
+                        onClick={() => { unequipItem(char.id, 'weapon'); }} 
+                        style={{ padding: '1px 4px', fontSize: '9px', flex: 1, marginTop: 0 }}
+                      >
+                        Remover
+                      </button>
+                      {onSelectForgeItem && (
+                        <button 
+                          className="btn-primary" 
+                          onClick={() => { if (char.equipment.weapon) onSelectForgeItem(char.equipment.weapon.id); }} 
+                          style={{ padding: '1px 4px', fontSize: '9px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)', marginTop: 0 }}
+                          title="Melhorar item na Forja"
+                        >
+                          🔮
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -159,7 +176,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>Armadura</span>
                   <div 
-                    className={`item-slot rarity-${char.equipment.armor?.rarity || 'common'}`} 
+                    className={`item-slot rarity-${char.equipment.armor?.rarity ?? 'common'}`} 
                     onClick={() => { setSelectedSlot('armor'); setSelectedRuneSlot(null); }}
                     style={{ width: '56px', height: '56px', borderStyle: char.equipment.armor ? 'solid' : 'dashed' }}
                   >
@@ -171,13 +188,25 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                     ) : '👕'}
                   </div>
                   {char.equipment.armor && (
-                    <button 
-                      className="btn-danger" 
-                      onClick={() => unequipItem(char.id, 'armor')}
-                      style={{ padding: '1px 4px', fontSize: '9px', marginTop: '2px' }}
-                    >
-                      Remover
-                    </button>
+                    <div style={{ display: 'flex', gap: '3px', marginTop: '2px', width: '100%' }}>
+                      <button 
+                        className="btn-danger" 
+                        onClick={() => { unequipItem(char.id, 'armor'); }}
+                        style={{ padding: '1px 4px', fontSize: '9px', flex: 1, marginTop: 0 }}
+                      >
+                        Remover
+                      </button>
+                      {onSelectForgeItem && (
+                        <button 
+                          className="btn-primary" 
+                          onClick={() => { if (char.equipment.armor) onSelectForgeItem(char.equipment.armor.id); }} 
+                          style={{ padding: '1px 4px', fontSize: '9px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)', marginTop: 0 }}
+                          title="Melhorar item na Forja"
+                        >
+                          🔮
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -185,7 +214,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: '4px' }}>
                   <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>Anel</span>
                   <div 
-                    className={`item-slot rarity-${char.equipment.ring?.rarity || 'common'}`} 
+                    className={`item-slot rarity-${char.equipment.ring?.rarity ?? 'common'}`} 
                     onClick={() => { setSelectedSlot('ring'); setSelectedRuneSlot(null); }}
                     style={{ width: '56px', height: '56px', borderStyle: char.equipment.ring ? 'solid' : 'dashed' }}
                   >
@@ -197,13 +226,25 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                     ) : '💍'}
                   </div>
                   {char.equipment.ring && (
-                    <button 
-                      className="btn-danger" 
-                      onClick={() => unequipItem(char.id, 'ring')}
-                      style={{ padding: '1px 4px', fontSize: '9px', marginTop: '2px' }}
-                    >
-                      Remover
-                    </button>
+                    <div style={{ display: 'flex', gap: '3px', marginTop: '2px', width: '100%' }}>
+                      <button 
+                        className="btn-danger" 
+                        onClick={() => { unequipItem(char.id, 'ring'); }}
+                        style={{ padding: '1px 4px', fontSize: '9px', flex: 1, marginTop: 0 }}
+                      >
+                        Remover
+                      </button>
+                      {onSelectForgeItem && (
+                        <button 
+                          className="btn-primary" 
+                          onClick={() => { if (char.equipment.ring) onSelectForgeItem(char.equipment.ring.id); }} 
+                          style={{ padding: '1px 4px', fontSize: '9px', backgroundColor: 'var(--color-gold)', borderColor: 'var(--color-gold-dark)', marginTop: 0 }}
+                          title="Melhorar item na Forja"
+                        >
+                          🔮
+                        </button>
+                      )}
+                    </div>
                   )}
                 </div>
 
@@ -214,7 +255,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                 <div style={{ border: '1px solid var(--color-border)', borderRadius: '6px', padding: '6px', background: 'rgba(0,0,0,0.3)', marginTop: '8px' }}>
                   <h4 style={{ fontSize: '11px', color: 'var(--color-gold)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Escolha um item ({selectedSlot === 'weapon' ? 'Armas' : selectedSlot === 'armor' ? 'Armaduras' : 'Anéis'})</span>
-                    <button onClick={() => setSelectedSlot(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
+                    <button onClick={() => { setSelectedSlot(null); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
                     {getEligibleItems(selectedSlot).length === 0 ? (
@@ -240,16 +281,16 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                         >
                           <div>
                             <span style={{ color: `var(--rarity-${item.rarity}-text)`, fontWeight: '600' }}>
-                              {item.name} {item.refineLevel > 0 ? `+${item.refineLevel}` : ''}
+                              {item.name} {item.refineLevel > 0 ? `+${item.refineLevel.toString()}` : ''}
                             </span>
                             <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
-                              {item.attack > 0 && `Atk: +${item.attack} `}
-                              {item.defense > 0 && `Def: +${item.defense} `}
-                              {item.hp > 0 && `HP: +${item.hp} `}
+                              {item.attack > 0 && `Atk: +${item.attack.toString()} `}
+                              {item.defense > 0 && `Def: +${item.defense.toString()} `}
+                              {item.hp > 0 && `HP: +${item.hp.toString()} `}
                             </div>
                           </div>
                           <span style={{ fontSize: '9px', color: char.level >= item.levelRequired ? 'var(--color-success)' : 'var(--color-danger)' }}>
-                            Req: Nv.{item.levelRequired}
+                            Req: Nv.{item.levelRequired.toString()}{item.classRequirement ? ` (${item.classRequirement === 'Warrior' ? 'Guerreiro' : item.classRequirement === 'Mage' ? 'Mago' : item.classRequirement === 'Rogue' ? 'Ladino' : item.classRequirement === 'Cleric' ? 'Clérigo' : item.classRequirement === 'Paladin' ? 'Paladino' : 'Necromante'})` : ''}
                           </span>
                         </div>
                       ))
@@ -288,7 +329,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                       <button 
                         className="btn-primary" 
                         disabled={char.skillPoints <= 0 || isMax}
-                        onClick={() => allocateSkillPoint(char.id, skill.id)}
+                        onClick={() => { allocateSkillPoint(char.id, skill.id); }}
                         style={{ padding: '6px', fontSize: '10px', minWidth: '40px' }}
                       >
                         {isMax ? 'MAX' : '+1'}
@@ -331,7 +372,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                     {rune && (
                       <button 
                         className="btn-danger" 
-                        onClick={() => unsocketRune(char.id, index)}
+                        onClick={() => { unsocketRune(char.id, index); }}
                         style={{ padding: '1px 4px', fontSize: '9px', marginTop: '2px' }}
                       >
                         Soltar
@@ -345,7 +386,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                 <div style={{ border: '1px solid var(--color-border)', borderRadius: '6px', padding: '6px', background: 'rgba(0,0,0,0.3)', marginTop: '8px' }}>
                   <h4 style={{ fontSize: '11px', color: 'var(--color-gold)', marginBottom: '6px', display: 'flex', justifyContent: 'space-between' }}>
                     <span>Socketar Runa no Slot {selectedRuneSlot + 1}</span>
-                    <button onClick={() => setSelectedRuneSlot(null)} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
+                    <button onClick={() => { setSelectedRuneSlot(null); }} style={{ background: 'none', border: 'none', color: '#fff', cursor: 'pointer', fontSize: '10px' }}>[X]</button>
                   </h4>
                   <div style={{ display: 'flex', flexDirection: 'column', gap: '4px', maxHeight: '120px', overflowY: 'auto' }}>
                     {runeStash.length === 0 ? (
@@ -374,11 +415,11 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                               {rune.name}
                             </span>
                             <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
-                              Efeito: {rune.statType === 'attack' ? `Atk +${rune.value}` : 
-                                       rune.statType === 'defense' ? `Def +${rune.value}` : 
-                                       rune.statType === 'hp' ? `HP +${rune.value}` : 
-                                       rune.statType === 'goldGain' ? `Gold +${Math.round(rune.value*100)}%` : 
-                                       `XP +${Math.round(rune.value*100)}%`}
+                              Efeito: {rune.statType === 'attack' ? `Atk +${rune.value.toString()}` : 
+                                       rune.statType === 'defense' ? `Def +${rune.value.toString()}` : 
+                                       rune.statType === 'hp' ? `HP +${rune.value.toString()}` : 
+                                       rune.statType === 'goldGain' ? `Gold +${Math.round(rune.value*100).toString()}%` : 
+                                       `XP +${Math.round(rune.value*100).toString()}%`}
                             </div>
                           </div>
                         </div>

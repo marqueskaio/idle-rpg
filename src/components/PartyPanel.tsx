@@ -9,13 +9,14 @@ interface PartyPanelProps {
 
 export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
   const party = useGameStore(s => s.party);
+  const tavern = useGameStore(s => s.tavern);
   const hireCharacter = useGameStore(s => s.hireCharacter);
   const layoutMode = useGameStore(s => s.layoutMode);
   const [isHiring, setIsHiring] = useState(false);
   const [hireName, setHireName] = useState('');
   const [hireClass, setHireClass] = useState<CharacterClass>('Warrior');
 
-  const handleHireSubmit = (e: React.FormEvent) => {
+  const handleHireSubmit = (e: React.SyntheticEvent) => {
     e.preventDefault();
     hireCharacter(hireName, hireClass);
     setHireName('');
@@ -32,7 +33,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
             <div 
               key={char.id} 
               className={`hero-card class-${char.class}`} 
-              onClick={() => onManageChar(char)}
+              onClick={() => { onManageChar(char); }}
               style={{
                 flexDirection: 'row', 
                 gap: '8px', 
@@ -41,7 +42,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                 width: '125px',
                 alignItems: 'center'
               }}
-              title={`Clique para gerenciar ${char.name}. CP: ${stats.power}`}
+              title={`Clique para gerenciar ${char.name}. CP: ${stats.power.toString()}`}
             >
               <div 
                 className="hero-avatar" 
@@ -61,29 +62,29 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   {char.name}
                 </span>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '9px', color: 'var(--color-gold)' }}>
-                  <span>Nv.{char.level}</span>
+                  <span>Nv.{char.level.toString()}</span>
                   {char.skillPoints > 0 && <span style={{ color: 'var(--color-success)', fontWeight: 'bold' }}>+1 SP</span>}
                 </div>
                 <div className="progress-track" style={{ height: '3px', border: 'none', marginTop: '2px' }}>
-                  <div className="progress-fill xp" style={{ width: `${xpPercent}%` }} />
+                  <div className="progress-fill xp" style={{ width: `${xpPercent.toString()}%` }} />
                 </div>
               </div>
             </div>
           );
         })}
-        {party.length < 3 && (
+        {party.length + tavern.length < 12 && (
           <button 
             className="btn-secondary" 
-            onClick={() => setIsHiring(true)}
+            onClick={() => { setIsHiring(true); }}
             style={{ height: '40px', padding: '0 8px', display: 'flex', alignItems: 'center', gap: '4px' }}
           >
-            ➕ Contratar ({party.length}/3)
+            ➕ Contratar ({(party.length + tavern.length).toString()}/12)
           </button>
         )}
 
         {isHiring && (
-          <div className="modal-overlay" onClick={() => setIsHiring(false)}>
-            <div className="modal-content" onClick={e => e.stopPropagation()}>
+          <div className="modal-overlay" onClick={() => { setIsHiring(false); }}>
+            <div className="modal-content" onClick={e => { e.stopPropagation(); }}>
               <h3 className="rpg-font" style={{ color: 'var(--color-gold)' }}>Contratar Herói</h3>
               <form onSubmit={handleHireSubmit} style={{ display: 'flex', flexDirection: 'column', gap: '10px' }}>
                 <div style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
@@ -91,7 +92,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   <input 
                     type="text" 
                     value={hireName} 
-                    onChange={e => setHireName(e.target.value)} 
+                    onChange={e => { setHireName(e.target.value); }} 
                     placeholder="Ex: Arthas" 
                     maxLength={14}
                     style={{
@@ -109,7 +110,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   <label style={{ fontSize: '11px', color: 'var(--color-text-dim)' }}>Classe</label>
                   <select 
                     value={hireClass} 
-                    onChange={e => setHireClass(e.target.value as CharacterClass)}
+                    onChange={e => { setHireClass(e.target.value as CharacterClass); }}
                     title="Escolher classe do herói"
                     style={{
                       background: 'var(--bg-panel)',
@@ -123,10 +124,13 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                     <option value="Warrior">Guerreiro (Foco: Defesa & Vida)</option>
                     <option value="Mage">Mago (Foco: Alto Ataque)</option>
                     <option value="Rogue">Ladino (Foco: Velocidade & Crit)</option>
+                    <option value="Cleric">Clérigo (Foco: Vida & Suporte)</option>
+                    <option value="Paladin">Paladino (Foco: Equilíbrio)</option>
+                    <option value="Necromancer">Necromante (Foco: Mágica)</option>
                   </select>
                 </div>
                 <div style={{ display: 'flex', gap: '8px', marginTop: '4px' }}>
-                  <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => setIsHiring(false)}>
+                  <button type="button" className="btn-secondary" style={{ flex: 1 }} onClick={() => { setIsHiring(false); }}>
                     Cancelar
                   </button>
                   <button type="submit" className="btn-primary" style={{ flex: 1 }}>
@@ -146,7 +150,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <h3 className="rpg-font" style={{ fontSize: '12px', color: 'var(--color-text)' }}>👥 Seu Grupo ({party.length}/3)</h3>
         {party.length < 3 && !isHiring && (
-          <button className="btn-secondary" onClick={() => setIsHiring(true)}>
+          <button className="btn-secondary" onClick={() => { setIsHiring(true); }}>
             ➕ Recrutar
           </button>
         )}
@@ -158,7 +162,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
             <input 
               type="text" 
               value={hireName} 
-              onChange={e => setHireName(e.target.value)} 
+              onChange={e => { setHireName(e.target.value); }} 
               placeholder="Nome do herói..." 
               maxLength={12}
               style={{ flex: 1 }}
@@ -166,7 +170,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
             />
             <select 
               value={hireClass} 
-              onChange={e => setHireClass(e.target.value as CharacterClass)}
+              onChange={e => { setHireClass(e.target.value as CharacterClass); }}
               title="Escolher classe do herói"
             >
               <option value="Warrior">🛡️ Guerreiro</option>
@@ -175,7 +179,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
             </select>
           </div>
           <div style={{ display: 'flex', gap: '8px', justifyContent: 'flex-end' }}>
-            <button type="button" className="btn-secondary" onClick={() => setIsHiring(false)} style={{ padding: '4px 8px', fontSize: '11px' }}>
+            <button type="button" className="btn-secondary" onClick={() => { setIsHiring(false); }} style={{ padding: '4px 8px', fontSize: '11px' }}>
               Cancelar
             </button>
             <button type="submit" className="btn-primary" style={{ padding: '4px 8px', fontSize: '11px' }}>
@@ -196,7 +200,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
               <div 
                 key={char.id} 
                 className={`hero-card class-${char.class}`} 
-                onClick={() => onManageChar(char)}
+                onClick={() => { onManageChar(char); }}
                 title="Gerenciar Herói"
               >
                 {char.skillPoints > 0 && (
@@ -226,7 +230,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                 </div>
                 <div className="progress-container" style={{ marginTop: '8px' }}>
                   <div className="progress-track" style={{ height: '6px' }}>
-                    <div className="progress-fill xp" style={{ width: `${xpPercent}%` }} />
+                    <div className="progress-fill xp" style={{ width: `${xpPercent.toString()}%` }} />
                   </div>
                 </div>
               </div>
