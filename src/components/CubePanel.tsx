@@ -1,17 +1,13 @@
 import React from 'react';
 import { useGameStore } from '../game/store';
+import { ItemIcon } from '../game/icons';
 
 export const CubePanel: React.FC = () => {
-  const { cubeSlots, autoFillCube, clearCube, synthesizeCube, removeFromCube } = useGameStore();
-
-  const getItemTypeEmoji = (type: string) => {
-    switch (type) {
-      case 'weapon': return '🗡️';
-      case 'armor': return '🛡️';
-      case 'ring': return '💍';
-      default: return '📦';
-    }
-  };
+  const cubeSlots = useGameStore(s => s.cubeSlots);
+  const autoFillCube = useGameStore(s => s.autoFillCube);
+  const clearCube = useGameStore(s => s.clearCube);
+  const synthesizeCube = useGameStore(s => s.synthesizeCube);
+  const removeFromCube = useGameStore(s => s.removeFromCube);
 
   // Find if all items are same rarity and count filled slots
   const filledCount = cubeSlots.filter(s => s !== null).length;
@@ -35,7 +31,7 @@ export const CubePanel: React.FC = () => {
   };
 
   return (
-    <div className="rpg-panel panel-border" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+    <div className="rpg-panel panel-border" style={{ display: 'flex', flexDirection: 'column', gap: '12px', flex: 1, height: '100%' }}>
       
       {/* Red banner title */}
       <div className="rpg-title-ribbon" style={{ margin: '0 -12px 6px -12px' }}>
@@ -54,7 +50,7 @@ export const CubePanel: React.FC = () => {
             >
               {item ? (
                 <>
-                  <span className="slot-icon">{getItemTypeEmoji(item.type)}</span>
+                  <ItemIcon item={item} className="slot-icon" size={20} />
                   <span className="slot-refine" style={{ fontSize: '11px', top: '1px', right: '2px' }}>+{item.refineLevel}</span>
                 </>
               ) : (
@@ -86,7 +82,7 @@ export const CubePanel: React.FC = () => {
       </div>
 
       {/* Synthesis Details & Trigger */}
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 0' }}>
+      <div style={{ display: 'flex', flexDirection: 'column', gap: '6px', padding: '4px 0', marginTop: 'auto' }}>
         <div style={{ fontSize: '14px', color: 'var(--color-text-dim)', textAlign: 'center', lineHeight: '1.2' }}>
           {filledCount === 0 ? (
             <span>Selecione itens no Baú ou clique em Auto-Preencher.</span>

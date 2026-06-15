@@ -48,7 +48,8 @@ const actDecorations: { [act: number]: { emoji: string; x: number; y: number }[]
 };
 
 export const PortalPanel: React.FC = () => {
-  const { progression, party } = useGameStore();
+  const progression = useGameStore(s => s.progression);
+  const party = useGameStore(s => s.party);
   const [selectedAct, setSelectedAct] = useState<number>(progression.act);
 
   // Maximum difficulty unlocked is the current progression difficulty
@@ -137,6 +138,7 @@ export const PortalPanel: React.FC = () => {
           value={progression.difficulty} 
           onChange={handleDifficultyChange}
           style={{ flex: 1, padding: '4px 6px !important', height: '28px' }}
+          title="Selecionar Dificuldade"
         >
           {Array.from({ length: maxDifficulty }).map((_, i) => (
             <option key={i} value={i + 1}>
@@ -188,10 +190,11 @@ export const PortalPanel: React.FC = () => {
               left: `${dec.x}%`,
               top: `${dec.y}%`,
               transform: 'translate(-50%, -50%)',
-              fontSize: '14px',
-              opacity: 0.65,
+              fontSize: '18px',
+              opacity: 0.4,
+              filter: 'saturate(0.8) blur(0.3px)',
               pointerEvents: 'none',
-              textShadow: '0 2px 4px rgba(0,0,0,0.8)'
+              textShadow: '0 2px 6px rgba(0,0,0,0.9)'
             }}
           >
             {dec.emoji}

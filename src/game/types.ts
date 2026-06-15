@@ -71,4 +71,6 @@ export interface GameState {
   layoutMode: 'widget' | 'taskbar';
   combatLog: string[];
   globalCombatPower: number;
+  seed: number;       // estado do PRNG determinístico (persistido)
+  lastTickMs: number; // epoch ms do último tick lógico processado (offline catch-up)
 }

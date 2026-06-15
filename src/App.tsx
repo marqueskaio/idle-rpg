@@ -4,34 +4,44 @@ import { startGameLoop, stopGameLoop } from './game/engine';
 import { Header } from './components/Header';
 import { PortalPanel } from './components/PortalPanel';
 import { CubePanel } from './components/CubePanel';
+import { StageProgress } from './components/StageProgress';
+import { PartyPanel } from './components/PartyPanel';
+import { CharacterModal } from './components/CharacterModal';
 import type { Item, CharacterClass } from './game/types';
+import { ItemIcon, RuneIcon, ClassIcon, CoinIcon, StoneIcon, PowerIcon } from './game/icons';
 
 export const App: React.FC = () => {
-  const { 
-    party, 
-    inventory, 
-    runeStash, 
-    combatLog, 
-    gold, 
-    enchantStones,
-    craftItem,
-    sellItem,
-    dismantleItem,
-    enchantItem,
-    hireCharacter,
-    equipItem,
-    unequipItem,
-    socketRune,
-    unsocketRune,
-    allocateSkillPoint,
-    addToCube
-  } = useGameStore();
+  // Seletores granulares: cada componente assina só o que usa, evitando o
+  // re-render global a cada tick. Ações são refs estáveis (não disparam render).
+  const party = useGameStore(s => s.party);
+  const inventory = useGameStore(s => s.inventory);
+  const runeStash = useGameStore(s => s.runeStash);
+  const combatLog = useGameStore(s => s.combatLog);
+  const gold = useGameStore(s => s.gold);
+  const enchantStones = useGameStore(s => s.enchantStones);
+  const layoutMode = useGameStore(s => s.layoutMode);
+  const globalCombatPower = useGameStore(s => s.globalCombatPower);
+  const craftItem = useGameStore(s => s.craftItem);
+  const sellItem = useGameStore(s => s.sellItem);
+  const dismantleItem = useGameStore(s => s.dismantleItem);
+  const sortInventory = useGameStore(s => s.sortInventory);
+  const sellItemsByRarity = useGameStore(s => s.sellItemsByRarity);
+  const enchantItem = useGameStore(s => s.enchantItem);
+  const hireCharacter = useGameStore(s => s.hireCharacter);
+  const equipItem = useGameStore(s => s.equipItem);
+  const unequipItem = useGameStore(s => s.unequipItem);
+  const socketRune = useGameStore(s => s.socketRune);
+  const unsocketRune = useGameStore(s => s.unsocketRune);
+  const allocateSkillPoint = useGameStore(s => s.allocateSkillPoint);
+  const addToCube = useGameStore(s => s.addToCube);
+  const toggleLayoutMode = useGameStore(s => s.toggleLayoutMode);
 
   const [activeRightTab, setActiveRightTab] = useState<'portal' | 'cube'>('portal');
   const [selectedHeroId, setSelectedHeroId] = useState<string | null>(null);
   const [selectedStashItemId, setSelectedStashItemId] = useState<string | null>(null);
   const [activeGearSlotSelect, setActiveGearSlotSelect] = useState<'weapon' | 'armor' | 'ring' | null>(null);
   const [activeRuneSlotSelect, setActiveRuneSlotSelect] = useState<number | null>(null);
+  const [managedCharId, setManagedCharId] = useState<string | null>(null);
   
   // Hiring Form Local State
   const [isHiring, setIsHiring] = useState(false);
@@ -46,28 +56,23 @@ export const App: React.FC = () => {
     };
   }, []);
 
-  // Sync selected hero when party changes
-  useEffect(() => {
-    if (party.length > 0) {
-      if (!selectedHeroId || !party.some(c => c.id === selectedHeroId)) {
-        setSelectedHeroId(party[0].id);
-      }
-    } else {
-      setSelectedHeroId(null);
-    }
-  }, [party, selectedHeroId]);
-
-  // Find active selected hero
-  const activeHero = party.find(c => c.id === selectedHeroId) || null;
+  // Find active selected hero (falls back to first hero in party if selected is invalid)
+  const activeHero = party.find(c => c.id === selectedHeroId) || party[0] || null;
   const activeHeroStats = activeHero ? calculateCharacterStats(activeHero) : null;
+  // Item equipado no slot atualmente aberto (para mostrar status ao clicar no equipamento)
+  const equippedInSlot = activeGearSlotSelect && activeHero ? activeHero.equipment[activeGearSlotSelect] : null;
 
-  // Stash grid calculation: fixed 50 slots
-  const totalStashSlots = 50;
-  const stashSlots = Array(totalStashSlots).fill(null);
+  // Stash grid: cresce com o inventário (rolável). Mostra TODOS os itens
+  // + algumas vagas livres, arredondado para linhas completas de 10.
+  const STASH_COLS = 10;
+  const MIN_STASH_SLOTS = 50;
+  const totalStashSlots = Math.max(
+    MIN_STASH_SLOTS,
+    Math.ceil((inventory.length + 5) / STASH_COLS) * STASH_COLS
+  );
+  const stashSlots: (Item | null)[] = Array(totalStashSlots).fill(null);
   inventory.forEach((item, index) => {
-    if (index < totalStashSlots) {
-      stashSlots[index] = item;
-    }
+    stashSlots[index] = item;
   });
 
   const selectedStashItem = inventory.find(i => i.id === selectedStashItemId) || null;
@@ -95,25 +100,8 @@ export const App: React.FC = () => {
     }
   };
 
-  const getItemTypeEmoji = (type: string) => {
-    switch (type) {
-      case 'weapon': return '🗡️';
-      case 'armor': return '🛡️';
-      case 'ring': return '💍';
-      default: return '📦';
-    }
-  };
-
-  const getClassEmoji = (cls: CharacterClass) => {
-    switch (cls) {
-      case 'Warrior': return '🛡️';
-      case 'Mage': return '🔮';
-      case 'Rogue': return '🗡️';
-    }
-  };
-
   const getRarityColor = (rarity: string) => {
-    return `var(--rarity-${rarity})`;
+    return `var(--rarity-${rarity}-text)`;
   };
 
   // Enchantment costs
@@ -123,6 +111,46 @@ export const App: React.FC = () => {
     const successRate = Math.max(0.35, 1.0 - Math.max(0, item.refineLevel - 3) * 0.15);
     return { stoneCost, goldCost, successRate: Math.round(successRate * 100) };
   };
+
+  if (layoutMode === 'taskbar') {
+    return (
+      <div className="taskbar-stage">
+      <div className="taskbar-layout">
+        {/* Alternador de Layout */}
+        <div className="taskbar-section" style={{ borderRight: '1px solid var(--color-border)', paddingRight: '12px' }}>
+          <button 
+            className="btn-secondary" 
+            onClick={toggleLayoutMode} 
+            title="Mudar para Modo Completo"
+            style={{ fontSize: '11px', padding: '2px 6px', color: 'var(--color-gold)' }}
+          >
+            🖥️ COMPLETO
+          </button>
+        </div>
+
+        {/* Progresso de Fase */}
+        <StageProgress />
+
+        {/* Controle da Party */}
+        <div style={{ display: 'flex', alignItems: 'center', flex: 1 }}>
+          <PartyPanel onManageChar={(char) => setManagedCharId(char.id)} />
+        </div>
+
+        {/* Status Globais Rápidos */}
+        <div className="taskbar-section" style={{ gap: '12px', fontSize: '12px', borderLeft: '1px solid var(--color-border)', paddingLeft: '12px' }}>
+          <span title="Ouro" style={{ color: '#ffd700', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><CoinIcon /> {gold.toLocaleString()}</span>
+          <span title="Pedras" style={{ color: '#a5f3fc', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><StoneIcon /> {enchantStones}</span>
+          <span title="Poder Global" style={{ color: 'var(--color-gold)', display: 'inline-flex', alignItems: 'center', gap: '4px' }}><PowerIcon /> {globalCombatPower.toLocaleString()}</span>
+        </div>
+
+        {/* Modal de gerenciamento do herói */}
+        {managedCharId && (
+          <CharacterModal charId={managedCharId} onClose={() => setManagedCharId(null)} />
+        )}
+      </div>
+      </div>
+    );
+  }
 
   return (
     <div className="rpg-desktop-layout">
@@ -146,6 +174,31 @@ export const App: React.FC = () => {
               <button className="stash-tab-btn" disabled>+</button>
             </div>
 
+            {/* Toolbar: contador + organizar + venda em lote */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-text-dim)' }}>Itens: <strong style={{ color: 'var(--color-text)' }}>{inventory.length}</strong></span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  className="btn-secondary"
+                  onClick={sortInventory}
+                  disabled={inventory.length === 0}
+                  title="Organizar por raridade (maior primeiro)"
+                  style={{ fontSize: '12px', padding: '2px 8px' }}
+                >
+                  🗂️ Organizar
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => { sellItemsByRarity(['common', 'uncommon']); setSelectedStashItemId(null); }}
+                  disabled={!inventory.some(i => i.rarity === 'common' || i.rarity === 'uncommon')}
+                  title="Vende todos os itens Comuns e Incomuns"
+                  style={{ fontSize: '12px', padding: '2px 8px', color: 'var(--color-gold)' }}
+                >
+                  🪙 Vender comuns
+                </button>
+              </div>
+            </div>
+
             {/* 10-Column Grid slots */}
             <div className="stash-grid">
               {stashSlots.map((item, idx) => (
@@ -156,7 +209,7 @@ export const App: React.FC = () => {
                 >
                   {item ? (
                     <>
-                      <span className="slot-icon">{getItemTypeEmoji(item.type)}</span>
+                      <ItemIcon item={item} className="slot-icon" size={22} />
                       <span className="slot-refine">+{item.refineLevel}</span>
                     </>
                   ) : (
@@ -270,7 +323,7 @@ export const App: React.FC = () => {
                     style={{ flex: 1 }}
                     required
                   />
-                  <select value={hireClass} onChange={e => setHireClass(e.target.value as CharacterClass)}>
+                  <select value={hireClass} onChange={e => setHireClass(e.target.value as CharacterClass)} title="Escolher classe do herói">
                     <option value="Warrior">🛡️ Guerreiro</option>
                     <option value="Mage">🔮 Mago</option>
                     <option value="Rogue">🗡️ Ladino</option>
@@ -292,7 +345,7 @@ export const App: React.FC = () => {
                   onClick={() => { setSelectedHeroId(char.id); setActiveGearSlotSelect(null); setActiveRuneSlotSelect(null); }}
                   style={{ flex: 1, padding: '3px', fontSize: '15px', textTransform: 'none' }}
                 >
-                  {getClassEmoji(char.class)} {char.name} (Nv.{char.level})
+                  <ClassIcon cls={char.class} size={14} /> {char.name} (Nv.{char.level})
                 </button>
               ))}
               {party.length === 0 && (
@@ -336,7 +389,7 @@ export const App: React.FC = () => {
                     >
                       {activeHero.equipment.weapon ? (
                         <>
-                          <span className="slot-icon">🗡️</span>
+                          <ItemIcon item={activeHero.equipment.weapon} className="slot-icon" size={26} />
                           <span className="slot-refine">+{activeHero.equipment.weapon.refineLevel}</span>
                         </>
                       ) : '➕'}
@@ -355,7 +408,7 @@ export const App: React.FC = () => {
                     >
                       {activeHero.equipment.armor ? (
                         <>
-                          <span className="slot-icon">👕</span>
+                          <ItemIcon item={activeHero.equipment.armor} className="slot-icon" size={26} />
                           <span className="slot-refine">+{activeHero.equipment.armor.refineLevel}</span>
                         </>
                       ) : '➕'}
@@ -374,7 +427,7 @@ export const App: React.FC = () => {
                     >
                       {activeHero.equipment.ring ? (
                         <>
-                          <span className="slot-icon">💍</span>
+                          <ItemIcon item={activeHero.equipment.ring} className="slot-icon" size={26} />
                           <span className="slot-refine">+{activeHero.equipment.ring.refineLevel}</span>
                         </>
                       ) : '➕'}
@@ -393,6 +446,28 @@ export const App: React.FC = () => {
                       <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Selecionar {activeGearSlotSelect === 'weapon' ? 'Arma' : activeGearSlotSelect === 'armor' ? 'Armadura' : 'Anel'}</span>
                       <button className="rpg-close-x" onClick={() => setActiveGearSlotSelect(null)}>X</button>
                     </div>
+
+                    {/* Status do item atualmente equipado neste slot */}
+                    <div style={{ background: '#0d0c0b', border: '1px solid var(--color-border)', padding: '5px', marginBottom: '5px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', marginBottom: '2px' }}>Equipado neste slot:</div>
+                      {equippedInSlot ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: getRarityColor(equippedInSlot.rarity), fontWeight: 600, fontSize: '13px' }}>{equippedInSlot.name} +{equippedInSlot.refineLevel}</span>
+                            <span style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--color-text-dim)' }}>
+                              {equippedInSlot.attack > 0 && <span>⚔️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.attack * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                              {equippedInSlot.defense > 0 && <span>🛡️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.defense * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                              {equippedInSlot.hp > 0 && <span>❤️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.hp * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                            </span>
+                          </div>
+                          <button className="btn-danger" onClick={() => unequipItem(activeHero.id, equippedInSlot.type)} style={{ fontSize: '11px', padding: '1px 6px' }}>Remover</button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>Nenhum item equipado.</span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', marginBottom: '3px' }}>Trocar por:</div>
                     <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {inventory.filter(i => i.type === activeGearSlotSelect).length === 0 ? (
                         <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', textAlign: 'center', padding: '4px' }}>Nenhum item compatível no baú.</div>
@@ -402,9 +477,8 @@ export const App: React.FC = () => {
                           .map(item => (
                             <div
                               key={item.id}
-                              className="stash-slot"
+                              className="equip-row"
                               onClick={() => { equipItem(activeHero.id, item.id); setActiveGearSlotSelect(null); }}
-                              style={{ width: '100%', height: 'auto', display: 'flex', justifyContent: 'space-between', padding: '4px', fontSize: '13px', borderStyle: 'solid' }}
                             >
                               <span style={{ color: getRarityColor(item.rarity) }}>{item.name} +{item.refineLevel}</span>
                               <span style={{ color: activeHero.level >= item.levelRequired ? 'var(--color-success)' : 'var(--color-danger)' }}>Req: Nv.{item.levelRequired}</span>
@@ -433,7 +507,7 @@ export const App: React.FC = () => {
                       >
                         {rune ? (
                           <div style={{ transform: 'rotate(-45deg)', display: 'flex', flexDirection: 'column', alignItems: 'center' }} title={rune.name}>
-                            <span style={{ fontSize: '14px' }}>🔷</span>
+                            <RuneIcon rune={rune} size={16} />
                           </div>
                         ) : (
                           <span style={{ transform: 'rotate(-45deg)', fontSize: '11px', color: 'var(--color-text-dim)' }}>+</span>
@@ -461,9 +535,8 @@ export const App: React.FC = () => {
                         runeStash.map(rune => (
                           <div
                             key={rune.id}
-                            className="stash-slot"
+                            className="equip-row"
                             onClick={() => { socketRune(activeHero.id, rune.id, activeRuneSlotSelect); setActiveRuneSlotSelect(null); }}
-                            style={{ width: '100%', height: 'auto', display: 'flex', justifyContent: 'space-between', padding: '4px', fontSize: '13px' }}
                           >
                             <span style={{ color: 'var(--class-mage)' }}>{rune.name}</span>
                             <span style={{ fontSize: '12px' }}>
@@ -488,7 +561,7 @@ export const App: React.FC = () => {
                       return (
                         <div key={skill.id} style={{ flex: 1, backgroundColor: '#090807', border: '1px solid var(--color-border)', padding: '4px', display: 'flex', flexDirection: 'column', justifyContent: 'space-between' }}>
                           <div>
-                            <div style={{ fontSize: '13px', color: 'white', fontWeight: 'bold' }}>{skill.name}</div>
+                            <div style={{ fontSize: '13px', color: 'white', fontWeight: 'bold' }}>{skill.icon} {skill.name}</div>
                             <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', height: '28px', overflow: 'hidden' }}>{skill.description}</div>
                           </div>
                           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: '4px' }}>

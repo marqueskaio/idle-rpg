@@ -2,7 +2,8 @@ import React from 'react';
 import { useGameStore } from '../game/store';
 
 export const StageProgress: React.FC = () => {
-  const { progression, layoutMode } = useGameStore();
+  const progression = useGameStore(s => s.progression);
+  const layoutMode = useGameStore(s => s.layoutMode);
 
   const difficultyNames = ['Normal', 'Pesadelo', 'Inferno', 'Tormento', 'Abismo'];
   const diffName = difficultyNames[progression.difficulty - 1] || `Diff ${progression.difficulty}`;
