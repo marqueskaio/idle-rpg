@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGameStore, calculateCharacterStats } from '../game/store';
+import { ClassIcon } from '../game/icons';
 import type { Character, CharacterClass } from '../game/types';
 
 interface PartyPanelProps {
@@ -7,7 +8,9 @@ interface PartyPanelProps {
 }
 
 export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
-  const { party, hireCharacter, layoutMode } = useGameStore();
+  const party = useGameStore(s => s.party);
+  const hireCharacter = useGameStore(s => s.hireCharacter);
+  const layoutMode = useGameStore(s => s.layoutMode);
   const [isHiring, setIsHiring] = useState(false);
   const [hireName, setHireName] = useState('');
   const [hireClass, setHireClass] = useState<CharacterClass>('Warrior');
@@ -17,14 +20,6 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
     hireCharacter(hireName, hireClass);
     setHireName('');
     setIsHiring(false);
-  };
-
-  const getClassEmoji = (cls: CharacterClass) => {
-    switch (cls) {
-      case 'Warrior': return '🛡️';
-      case 'Mage': return '🔮';
-      case 'Rogue': return '🗡️';
-    }
   };
 
   if (layoutMode === 'taskbar') {
@@ -59,7 +54,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   color: `var(--class-${char.class.toLowerCase()})`
                 }}
               >
-                {getClassEmoji(char.class)}
+                <ClassIcon cls={char.class} size={18} />
               </div>
               <div style={{ display: 'flex', flexDirection: 'column', flex: 1, minWidth: 0 }}>
                 <span className="hero-name" style={{ fontSize: '10px', textAlign: 'left' }}>
@@ -115,6 +110,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   <select 
                     value={hireClass} 
                     onChange={e => setHireClass(e.target.value as CharacterClass)}
+                    title="Escolher classe do herói"
                     style={{
                       background: 'var(--bg-panel)',
                       border: '1px solid var(--color-border)',
@@ -171,6 +167,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
             <select 
               value={hireClass} 
               onChange={e => setHireClass(e.target.value as CharacterClass)}
+              title="Escolher classe do herói"
             >
               <option value="Warrior">🛡️ Guerreiro</option>
               <option value="Mage">🔮 Mago</option>
@@ -220,7 +217,7 @@ export const PartyPanel: React.FC<PartyPanelProps> = ({ onManageChar }) => {
                   </span>
                 )}
                 <div className="hero-avatar" style={{ color: `var(--class-${char.class.toLowerCase()})` }}>
-                  {getClassEmoji(char.class)}
+                  <ClassIcon cls={char.class} size={18} />
                 </div>
                 <span className="hero-name">{char.name}</span>
                 <span className="hero-level">Nv.{char.level}</span>

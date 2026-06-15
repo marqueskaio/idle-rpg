@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { useGameStore, CLASS_SKILLS, calculateCharacterStats } from '../game/store';
+import { ItemIcon, RuneIcon, ClassIcon } from '../game/icons';
 
 
 interface CharacterModalProps {
@@ -10,17 +11,15 @@ interface CharacterModalProps {
 type TabType = 'skills' | 'equipment' | 'runes' | 'options';
 
 export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose }) => {
-  const { 
-    party, 
-    inventory, 
-    runeStash,
-    allocateSkillPoint, 
-    equipItem, 
-    unequipItem, 
-    socketRune, 
-    unsocketRune, 
-    fireCharacter 
-  } = useGameStore();
+  const party = useGameStore(s => s.party);
+  const inventory = useGameStore(s => s.inventory);
+  const runeStash = useGameStore(s => s.runeStash);
+  const allocateSkillPoint = useGameStore(s => s.allocateSkillPoint);
+  const equipItem = useGameStore(s => s.equipItem);
+  const unequipItem = useGameStore(s => s.unequipItem);
+  const socketRune = useGameStore(s => s.socketRune);
+  const unsocketRune = useGameStore(s => s.unsocketRune);
+  const fireCharacter = useGameStore(s => s.fireCharacter);
 
   const [activeTab, setActiveTab] = useState<TabType>('equipment');
   const [selectedSlot, setSelectedSlot] = useState<'weapon' | 'armor' | 'ring' | null>(null);
@@ -49,15 +48,6 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
 
 
 
-  const getClassEmoji = (cls: string) => {
-    switch (cls) {
-      case 'Warrior': return '🛡️';
-      case 'Mage': return '🔮';
-      case 'Rogue': return '🗡️';
-      default: return '👤';
-    }
-  };
-
   const xpPercent = Math.min(100, (char.xp / char.xpNeeded) * 100);
 
   return (
@@ -68,7 +58,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-              <span style={{ fontSize: '18px' }}>{getClassEmoji(char.class)}</span>
+              <ClassIcon cls={char.class} size={20} />
               <h3 style={{ fontSize: '15px' }}>{char.name}</h3>
             </div>
             <span style={{ fontSize: '11px', color: 'var(--color-gold)' }}>
@@ -149,7 +139,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                   >
                     {char.equipment.weapon ? (
                       <>
-                        <span className="item-icon">🗡️</span>
+                        <ItemIcon item={char.equipment.weapon} className="item-icon" size={28} />
                         <span className="item-refine">+{char.equipment.weapon.refineLevel}</span>
                       </>
                     ) : '⚔️'}
@@ -175,7 +165,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                   >
                     {char.equipment.armor ? (
                       <>
-                        <span className="item-icon">🛡️</span>
+                        <ItemIcon item={char.equipment.armor} className="item-icon" size={28} />
                         <span className="item-refine">+{char.equipment.armor.refineLevel}</span>
                       </>
                     ) : '👕'}
@@ -201,7 +191,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                   >
                     {char.equipment.ring ? (
                       <>
-                        <span className="item-icon">💍</span>
+                        <ItemIcon item={char.equipment.ring} className="item-icon" size={28} />
                         <span className="item-refine">+{char.equipment.ring.refineLevel}</span>
                       </>
                     ) : '💍'}
@@ -249,7 +239,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                           }}
                         >
                           <div>
-                            <span style={{ color: `var(--rarity-${item.rarity})`, fontWeight: '600' }}>
+                            <span style={{ color: `var(--rarity-${item.rarity}-text)`, fontWeight: '600' }}>
                               {item.name} {item.refineLevel > 0 ? `+${item.refineLevel}` : ''}
                             </span>
                             <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
@@ -285,7 +275,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                       <div style={{ flex: 1, paddingRight: '8px' }}>
                         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
                           <h4 style={{ fontSize: '12px', color: 'var(--color-gold)' }}>
-                            {skill.type === 'active' ? '⚔️' : '🛡️'} {skill.name}
+                            {skill.icon} {skill.name}
                           </h4>
                           <span style={{ fontSize: '10px', color: 'var(--color-text-dim)' }}>
                             {currentLvl}/{skill.maxLevel} Nv
@@ -331,7 +321,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                     >
                       {rune ? (
                         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', transform: 'rotate(-45deg)' }}>
-                          <span style={{ fontSize: '16px' }}>🔷</span>
+                          <RuneIcon rune={rune} size={18} />
                           <span style={{ fontSize: '7px', color: 'var(--color-gold-bright)', position: 'absolute', bottom: '2px' }}>G.{rune.level}</span>
                         </div>
                       ) : (
@@ -380,7 +370,7 @@ export const CharacterModal: React.FC<CharacterModalProps> = ({ charId, onClose 
                           }}
                         >
                           <div>
-                            <span style={{ color: 'var(--rarity-rare)', fontWeight: '600' }}>
+                            <span style={{ color: 'var(--rarity-rare-text)', fontWeight: '600' }}>
                               {rune.name}
                             </span>
                             <div style={{ fontSize: '9px', color: 'var(--color-text-dim)' }}>
