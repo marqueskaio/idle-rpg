@@ -498,6 +498,8 @@ interface GameActions {
   unsocketRune: (charId: string, slotIndex: number) => void;
   sellItem: (itemId: string) => void;
   dismantleItem: (itemId: string) => void;
+  sortInventory: () => void;
+  sellItemsByRarity: (rarities: ItemRarity[]) => void;
   craftItem: () => void;
   enchantItem: (itemId: string) => void;
   tick: (nowMs: number) => void;
@@ -730,6 +732,35 @@ export const useGameStore = create<GameState & GameActions>()(
           enchantStones: state.enchantStones + stonesGain,
           inventory: state.inventory.filter(i => i.id !== itemId),
           combatLog: withLogs(state.combatLog, [`🔨 [Desmontar] Desmontou ${item.name} e obteve ${stonesGain} Pedra(s) de Encantamento.`])
+        };
+      }),
+
+      sortInventory: () => set((state) => {
+        const order: Record<ItemRarity, number> = { legendary: 5, epic: 4, rare: 3, uncommon: 2, common: 1 };
+        const sorted = [...state.inventory].sort((a, b) => {
+          if (order[b.rarity] !== order[a.rarity]) return order[b.rarity] - order[a.rarity];
+          if (b.refineLevel !== a.refineLevel) return b.refineLevel - a.refineLevel;
+          if (b.levelRequired !== a.levelRequired) return b.levelRequired - a.levelRequired;
+          return a.type.localeCompare(b.type);
+        });
+        return {
+          inventory: sorted,
+          combatLog: withLogs(state.combatLog, ['🗂️ [Baú] Inventário organizado por raridade.'])
+        };
+      }),
+
+      sellItemsByRarity: (rarities: ItemRarity[]) => set((state) => {
+        const target = new Set(rarities);
+        const toSell = state.inventory.filter(i => target.has(i.rarity));
+        if (toSell.length === 0) {
+          return { combatLog: withLogs(state.combatLog, ['⚠️ [Loja] Nenhum item desse grau no baú.']) };
+        }
+        const rarityVal = { common: 20, uncommon: 50, rare: 150, epic: 400, legendary: 1200 };
+        const goldGain = toSell.reduce((sum, i) => sum + Math.round(i.levelRequired * 5 + rarityVal[i.rarity]), 0);
+        return {
+          gold: state.gold + goldGain,
+          inventory: state.inventory.filter(i => !target.has(i.rarity)),
+          combatLog: withLogs(state.combatLog, [`🪙 [Loja] Vendeu ${toSell.length} item(s) por ${goldGain.toLocaleString()} Gold.`])
         };
       }),
 

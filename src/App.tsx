@@ -24,6 +24,8 @@ export const App: React.FC = () => {
   const craftItem = useGameStore(s => s.craftItem);
   const sellItem = useGameStore(s => s.sellItem);
   const dismantleItem = useGameStore(s => s.dismantleItem);
+  const sortInventory = useGameStore(s => s.sortInventory);
+  const sellItemsByRarity = useGameStore(s => s.sellItemsByRarity);
   const enchantItem = useGameStore(s => s.enchantItem);
   const hireCharacter = useGameStore(s => s.hireCharacter);
   const equipItem = useGameStore(s => s.equipItem);
@@ -57,14 +59,20 @@ export const App: React.FC = () => {
   // Find active selected hero (falls back to first hero in party if selected is invalid)
   const activeHero = party.find(c => c.id === selectedHeroId) || party[0] || null;
   const activeHeroStats = activeHero ? calculateCharacterStats(activeHero) : null;
+  // Item equipado no slot atualmente aberto (para mostrar status ao clicar no equipamento)
+  const equippedInSlot = activeGearSlotSelect && activeHero ? activeHero.equipment[activeGearSlotSelect] : null;
 
-  // Stash grid calculation: fixed 50 slots
-  const totalStashSlots = 50;
-  const stashSlots = Array(totalStashSlots).fill(null);
+  // Stash grid: cresce com o inventário (rolável). Mostra TODOS os itens
+  // + algumas vagas livres, arredondado para linhas completas de 10.
+  const STASH_COLS = 10;
+  const MIN_STASH_SLOTS = 50;
+  const totalStashSlots = Math.max(
+    MIN_STASH_SLOTS,
+    Math.ceil((inventory.length + 5) / STASH_COLS) * STASH_COLS
+  );
+  const stashSlots: (Item | null)[] = Array(totalStashSlots).fill(null);
   inventory.forEach((item, index) => {
-    if (index < totalStashSlots) {
-      stashSlots[index] = item;
-    }
+    stashSlots[index] = item;
   });
 
   const selectedStashItem = inventory.find(i => i.id === selectedStashItemId) || null;
@@ -164,6 +172,31 @@ export const App: React.FC = () => {
               <button className="stash-tab-btn active">Baú 1</button>
               <button className="stash-tab-btn" disabled>Baú 2</button>
               <button className="stash-tab-btn" disabled>+</button>
+            </div>
+
+            {/* Toolbar: contador + organizar + venda em lote */}
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '6px', fontSize: '12px' }}>
+              <span style={{ color: 'var(--color-text-dim)' }}>Itens: <strong style={{ color: 'var(--color-text)' }}>{inventory.length}</strong></span>
+              <div style={{ display: 'flex', gap: '4px' }}>
+                <button
+                  className="btn-secondary"
+                  onClick={sortInventory}
+                  disabled={inventory.length === 0}
+                  title="Organizar por raridade (maior primeiro)"
+                  style={{ fontSize: '12px', padding: '2px 8px' }}
+                >
+                  🗂️ Organizar
+                </button>
+                <button
+                  className="btn-secondary"
+                  onClick={() => { sellItemsByRarity(['common', 'uncommon']); setSelectedStashItemId(null); }}
+                  disabled={!inventory.some(i => i.rarity === 'common' || i.rarity === 'uncommon')}
+                  title="Vende todos os itens Comuns e Incomuns"
+                  style={{ fontSize: '12px', padding: '2px 8px', color: 'var(--color-gold)' }}
+                >
+                  🪙 Vender comuns
+                </button>
+              </div>
             </div>
 
             {/* 10-Column Grid slots */}
@@ -413,6 +446,28 @@ export const App: React.FC = () => {
                       <span className="rpg-gold-text" style={{ fontSize: '14px' }}>Selecionar {activeGearSlotSelect === 'weapon' ? 'Arma' : activeGearSlotSelect === 'armor' ? 'Armadura' : 'Anel'}</span>
                       <button className="rpg-close-x" onClick={() => setActiveGearSlotSelect(null)}>X</button>
                     </div>
+
+                    {/* Status do item atualmente equipado neste slot */}
+                    <div style={{ background: '#0d0c0b', border: '1px solid var(--color-border)', padding: '5px', marginBottom: '5px' }}>
+                      <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', marginBottom: '2px' }}>Equipado neste slot:</div>
+                      {equippedInSlot ? (
+                        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: '6px' }}>
+                          <div style={{ display: 'flex', flexDirection: 'column' }}>
+                            <span style={{ color: getRarityColor(equippedInSlot.rarity), fontWeight: 600, fontSize: '13px' }}>{equippedInSlot.name} +{equippedInSlot.refineLevel}</span>
+                            <span style={{ display: 'flex', gap: '8px', fontSize: '12px', color: 'var(--color-text-dim)' }}>
+                              {equippedInSlot.attack > 0 && <span>⚔️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.attack * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                              {equippedInSlot.defense > 0 && <span>🛡️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.defense * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                              {equippedInSlot.hp > 0 && <span>❤️ <strong style={{ color: '#fff' }}>{Math.round(equippedInSlot.hp * (1 + equippedInSlot.refineLevel * 0.15))}</strong></span>}
+                            </span>
+                          </div>
+                          <button className="btn-danger" onClick={() => unequipItem(activeHero.id, equippedInSlot.type)} style={{ fontSize: '11px', padding: '1px 6px' }}>Remover</button>
+                        </div>
+                      ) : (
+                        <span style={{ fontSize: '12px', color: 'var(--color-text-dim)' }}>Nenhum item equipado.</span>
+                      )}
+                    </div>
+
+                    <div style={{ fontSize: '11px', color: 'var(--color-text-dim)', marginBottom: '3px' }}>Trocar por:</div>
                     <div style={{ maxHeight: '100px', overflowY: 'auto', display: 'flex', flexDirection: 'column', gap: '3px' }}>
                       {inventory.filter(i => i.type === activeGearSlotSelect).length === 0 ? (
                         <div style={{ fontSize: '13px', color: 'var(--color-text-dim)', textAlign: 'center', padding: '4px' }}>Nenhum item compatível no baú.</div>
